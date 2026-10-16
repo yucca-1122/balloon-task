@@ -181,23 +181,46 @@ button.counts:focus-visible { outline: 3px solid var(--focus); outline-offset: 2
 .gc-note::before { content: ""; width: 1px; height: 14px; background: var(--warm); flex: none; }
 .log-list { list-style: none; margin: 0; padding: 0; }
 .log-day { margin: 14px 0 2px; font: 700 12.5px var(--font-round); letter-spacing: .04em; color: var(--muted); }
-.log-item { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+/* 割った風船の行：左にスライドすると、下から赤い「消去」が出る（さらに引くと赤が広がり、離すと確かめが出る） */
+.log-item { --dx: 0px; position: relative; overflow: hidden; border-bottom: 1px solid var(--line); }
+.log-row {
+  position: relative; z-index: 1; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px;
+  padding: 9px 0; background: var(--surface); touch-action: pan-y; cursor: grab;
+  -webkit-user-select: none; user-select: none;
+  transform: translateX(var(--dx)); transition: transform .22s ease-out;
+}
 .log-item .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--g); }
 .log-text { min-width: 0; overflow-wrap: anywhere; }
 .log-sub { font-size: 12.5px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.log-del {
+  position: absolute; top: 0; right: 0; bottom: 0; width: max(84px, calc(0px - var(--dx))); border: 0; padding: 0 0 0 28px;
+  background: var(--warm); color: var(--on-warm); font: 700 14px var(--font-round); text-align: left;
+  transition: width .22s ease-out, background-color .15s;
+}
+.log-del:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; }
+.log-item.is-far .log-del { background: var(--warm-press); }
+.log-item.is-moving .log-row, .log-item.is-moving .log-del { transition: none; }
+.log-item.is-moving .log-row { cursor: grabbing; }
+/* 消去の確かめ（ブラウザの確認ダイアログは使えないので、画面の中に出す） */
+.confirm { position: fixed; inset: 0; z-index: 55; display: grid; place-items: center; padding: 16px; background: var(--scrim); }
+.confirm-card {
+  width: min(100%, 360px); padding: 20px 18px 16px; border-radius: 18px;
+  background: var(--surface); color: var(--fg); box-shadow: var(--card-shadow);
+}
+.confirm-title { margin: 0; font: 700 18px/1.4 var(--font-round); }
+.confirm-sub { margin: 8px 0 0; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+.confirm-item { display: block; margin-bottom: 4px; font-size: 15px; color: var(--fg); }
+.confirm-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+/* 丸いボタン（？ ⋯ ×）と「整える」も押し込める立体（見た目は「下のバーとボタン」の決まりで。小さいので厚みは 3px） */
 .icon-btn {
   width: 40px; height: 40px; border-radius: 50%; padding: 0;
-  border: 1.5px solid var(--line); background: transparent; color: var(--fg);
   font: 700 18px/1 var(--font-round); display: grid; place-items: center;
 }
-.icon-btn:active { background: var(--chip); }
 /* 整える：指で置いた場所を忘れて、元の並び（小さい風船は格子、大きい風船は真ん中）に戻す */
 .tidy-btn {
   height: 36px; padding: 0 14px; border-radius: 999px;
-  border: 1.5px solid var(--line); background: var(--hint-bg); color: var(--fg);
   font: 700 13.5px/1 var(--font-round); white-space: nowrap;
 }
-.tidy-btn:active { background: var(--chip); }
 
 /* ---- 空と雲 ---- */
 .stage { position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: none; }
@@ -347,24 +370,30 @@ button.counts:focus-visible { outline: 3px solid var(--focus); outline-offset: 2
   background: var(--bar-bg); border-top: 1px solid var(--line);
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
 }
-/* 押すと沈む立体ボタン：下に同じ形の「厚み」（濃い色）とやわらかい影。乗せると少し浮き、押すと沈み、離すとばねで戻る */
-.btn {
-  --edge: var(--btn-edge);
-  min-height: 48px; padding: 10px 16px; border-radius: 14px;
+/* 押すと沈む立体ボタン：下に同じ形の「厚み」（濃い色）とやわらかい影。乗せると少し浮き、押すと沈み、離すとばねで戻る。
+   文字のボタン（.btn）・つまずきの選択肢（.opt）・上の「整える」と丸いボタン（？ ⋯ ×）を同じ動きにそろえる。
+   厚みは --lift（ふつう 4px、小さいボタンは 3px）。文字のリンク・タブ・ジャンルの選択は平らなまま */
+.btn, .opt, .icon-btn, .tidy-btn {
+  --edge: var(--btn-edge); --lift: 4px;
   border: 1.5px solid var(--line); background: var(--btn-face); color: var(--fg);
-  font: 700 16px/1.3 var(--font-round); text-align: center;
-  transform: translateY(-4px);
-  box-shadow: 0 4px 0 var(--edge), 0 6px 10px var(--btn-drop);
+  transform: translateY(calc(var(--lift) * -1));
+  box-shadow: 0 var(--lift) 0 var(--edge), 0 calc(var(--lift) + 2px) 10px var(--btn-drop);
   transition: transform .6s cubic-bezier(.3, .7, .4, 1), box-shadow .6s cubic-bezier(.3, .7, .4, 1), filter .25s;
   -webkit-tap-highlight-color: transparent;
 }
 @media (hover: hover) {
-  .btn:hover {
-    transform: translateY(-6px); box-shadow: 0 6px 0 var(--edge), 0 9px 14px var(--btn-drop); filter: brightness(1.04);
+  .btn:hover, .opt:hover, .icon-btn:hover, .tidy-btn:hover {
+    transform: translateY(calc(var(--lift) * -1.5));
+    box-shadow: 0 calc(var(--lift) * 1.5) 0 var(--edge), 0 calc(var(--lift) * 1.5 + 3px) 14px var(--btn-drop); filter: brightness(1.04);
     transition-duration: .25s; transition-timing-function: cubic-bezier(.3, .7, .4, 1.5);
   }
 }
-.btn:active { transform: translateY(-2px); box-shadow: 0 2px 0 var(--edge), 0 3px 4px var(--btn-drop); transition-duration: .034s; background: var(--chip); }
+.btn:active, .opt:active, .icon-btn:active, .tidy-btn:active {
+  transform: translateY(calc(var(--lift) * -.5)); box-shadow: 0 calc(var(--lift) * .5) 0 var(--edge), 0 3px 4px var(--btn-drop);
+  transition-duration: .034s; background: var(--chip);
+}
+.btn { min-height: 48px; padding: 10px 16px; border-radius: 14px; font: 700 16px/1.3 var(--font-round); text-align: center; }
+.icon-btn, .tidy-btn { --lift: 3px; }
 .btn-primary { --edge: var(--warm-edge); background: var(--warm); border-color: var(--warm); color: var(--on-warm); }
 .btn-primary:active { background: var(--warm-press); border-color: var(--warm-press); }
 .btn-small { min-height: 40px; padding: 6px 16px; font-size: 14.5px; border-radius: 12px; }
@@ -456,14 +485,13 @@ button.counts:focus-visible { outline: 3px solid var(--focus); outline-offset: 2
 .task-chip .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--g); flex: none; }
 .task-chip span:last-child { min-width: 0; overflow-wrap: anywhere; }
 .opts { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 10px; }
+/* 5つの選択肢も、ほかのボタンと同じ押し込める立体（.btn と同じ決まり） */
 .opt {
   width: 100%; display: grid; grid-template-columns: 30px 1fr; align-items: center; gap: 12px;
-  min-height: 66px; padding: 14px 16px; text-align: left;
-  border-radius: 16px; border: 1.5px solid var(--line); background: var(--surface-2);
-  font: 700 16px/1.45 var(--font-round); color: var(--fg);
+  min-height: 66px; padding: 14px 16px; text-align: left; border-radius: 16px;
+  font: 700 16px/1.45 var(--font-round);
 }
-.opt:active { background: var(--chip); }
-.opt-n { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); border: 1.5px solid var(--line); font: 700 14px/1 var(--font-round); color: var(--muted); font-variant-numeric: tabular-nums; }
+.opt-n { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--chip); border: 1.5px solid var(--line); font: 700 14px/1 var(--font-round); color: var(--muted); font-variant-numeric: tabular-nums; }
 .ans-place { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); padding-top: 8px; }
 .ans-place b { padding: 3px 10px; border-radius: 999px; background: var(--chip); color: var(--fg); font: 700 13px/1.4 var(--font-round); }
 .ans-title { margin-top: 10px !important; }
@@ -613,6 +641,17 @@ button.counts:focus-visible { outline: 3px solid var(--focus); outline-offset: 2
 <section class="sheet sheet-bottom" id="sheet-diag" role="dialog" aria-modal="true" aria-labelledby="diag-title" hidden></section>
 
 <section class="sheet sheet-bottom" id="sheet-log" role="dialog" aria-modal="true" aria-labelledby="log-title" hidden></section>
+
+<div class="confirm" id="log-confirm" role="alertdialog" aria-modal="true" aria-labelledby="log-confirm-title" aria-describedby="log-confirm-sub" hidden>
+  <div class="confirm-card">
+    <p class="confirm-title" id="log-confirm-title">この記録を消去しますか？</p>
+    <p class="confirm-sub" id="log-confirm-sub"></p>
+    <div class="confirm-btns">
+      <button class="btn" id="log-confirm-no" type="button">いいえ</button>
+      <button class="btn btn-primary" id="log-confirm-yes" type="button">はい</button>
+    </div>
+  </div>
+</div>
 
 <section class="sheet sheet-bottom" id="sheet-help" role="dialog" aria-modal="true" aria-labelledby="help-title" hidden>
   <div class="grabber" aria-hidden="true"></div>
@@ -1606,13 +1645,22 @@ function popTask(id) {
     restoreTask(t, i);
   } });
 }
+/* 消したタスクは、渡したときの記録も一緒に外す（平均に残さない）。「元に戻す」で両方戻る */
 function deleteTask(id) {
   const i = state.tasks.findIndex((t) => t.id === id);
   if (i < 0) return;
   const t = state.tasks[i];
+  const logs = state.log.filter((e) => e.id === id);
   state.tasks.splice(i, 1);
+  if (logs.length) state.log = state.log.filter((e) => e.id !== id);
   commit();
-  toast('消したよ', { onAction: () => restoreTask(t, i) });
+  toast('消したよ', { onAction: () => { restoreLogs(logs); restoreTask(t, i); } });
+}
+function restoreLogs(list) {
+  if (!list.length) return;
+  const keys = new Set(state.log.map(logKey));
+  list.forEach((e) => { if (!keys.has(logKey(e))) state.log.push(e); });
+  pruneLog(state);
 }
 function clearExamples() {
   const removed = state.tasks.map((t, i) => ({ t: t, i: i })).filter((x) => x.t.example);
@@ -1997,7 +2045,8 @@ function genreChart(s) {
     }).join('')
     + '</ul><p class="small gc-note">線は3日（ここを越えるとパンパン）</p>';
 }
-function renderLog() {
+let logHtml = '';
+function renderLog(force) {
   const n = now(), s = returnStats();
   const head = '<div class="grabber" aria-hidden="true"></div><div class="sheet-head"><h2 id="log-title" tabindex="-1">記録</h2><button class="icon-btn" type="button" data-close aria-label="閉じる">×</button></div>';
   const stats = s
@@ -2010,15 +2059,121 @@ function renderLog() {
   if (!done.length) list = '<p class="small">まだ割った風船はないよ</p>';
   else {
     let last = '';
-    list = '<ul class="log-list">' + done.map((d) => {
+    list = '<p class="small">試しに入れた風船は、行を左にスライドすると消去できるよ（平均と割合からも外れる）</p><ul class="log-list">' + done.map((d) => {
       const day = dayLabel(d.doneAt, n), g = GENRES[d.genre];
       const sub = d.fromPassed ? '相手待ちから割った' : (typeof d.heldMs === 'number' ? fmtSpan(d.heldMs / DAY) + 'で割った' : '');
       const hdr = day !== last ? '<li class="log-day">' + day + '</li>' : '';
       last = day;
-      return hdr + '<li class="log-item" style="--g: var(' + g.v + ')"><span class="dot" aria-hidden="true"></span><span class="log-text">' + esc(g.label + '：' + d.text) + '</span><span class="log-sub">' + sub + '</span></li>';
+      const label = g.label + '：' + d.text;
+      return hdr + '<li class="log-item" style="--g: var(' + g.v + ')">'
+        + '<div class="log-row" data-id="' + esc(d.id) + '"><span class="dot" aria-hidden="true"></span><span class="log-text">' + esc(label) + '</span><span class="log-sub">' + sub + '</span></div>'
+        + '<button class="log-del" type="button" data-del="' + esc(d.id) + '" aria-label="' + esc('「' + label + '」の記録を消去') + '">消去</button></li>';
     }).join('') + '</ul>';
   }
-  $('sheet-log').innerHTML = head + '<p class="lbl">ボールを返す速さ</p>' + stats + genreChart(s) + '<p class="lbl">割った風船（新しい順・50件まで）</p>' + list;
+  const html = head + '<p class="lbl">ボールを返す速さ</p>' + stats + genreChart(s) + '<p class="lbl">割った風船（新しい順・50件まで）</p>' + list;
+  /* 中身が同じなら作り直さない（5秒ごとの描き直しで、フォーカスや開いた行が飛ばないように） */
+  if (!force && html === logHtml) return;
+  logHtml = html;
+  logUi.open = null;
+  logUi.drag = null;
+  $('sheet-log').innerHTML = html;
+}
+
+/* ===== 記録の消去：行を左にスライド → 赤い「消去」→ 確かめ（はい／いいえ）→ 消す ===== */
+const DEL_W = 84;
+const logUi = { open: null, drag: null, confirmId: null };
+/* 行を動かしている・開いている・確かめているあいだは、記録を描き直さない */
+const logBusy = () => !!(logUi.open || logUi.drag || logUi.confirmId);
+const kbFocus = (el) => { try { return el.matches(':focus-visible'); } catch (e) { return false; } };
+function setLogDx(li, dx) { li.style.setProperty('--dx', Math.round(dx) + 'px'); }
+function openLogRow(li, dx) {
+  if (logUi.open && logUi.open !== li) closeLogRow();
+  logUi.open = li;
+  setLogDx(li, dx == null ? -DEL_W : dx);
+}
+function closeLogRow(li) {
+  li = li || logUi.open;
+  if (logUi.open === li) logUi.open = null;
+  if (li) { li.classList.remove('is-far'); setLogDx(li, 0); }
+}
+function logDown(e) {
+  if (logUi.confirmId || e.target.closest('.log-del')) return;
+  const row = e.target.closest('.log-row'), li = row && row.parentElement;
+  if (logUi.open && logUi.open !== li) closeLogRow();
+  if (!row || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  const base = logUi.open === li ? -DEL_W : 0;
+  logUi.drag = { li: li, row: row, pid: e.pointerId, x0: e.clientX, y0: e.clientY, base: base, dx: base, axis: '' };
+}
+function logMove(e) {
+  const d = logUi.drag;
+  if (!d || e.pointerId !== d.pid) return;
+  const mx = e.clientX - d.x0, my = e.clientY - d.y0;
+  if (!d.axis) {
+    if (Math.abs(mx) < 8 && Math.abs(my) < 8) return;
+    d.axis = Math.abs(mx) > Math.abs(my) ? 'x' : 'y';
+    if (d.axis === 'y') { logUi.drag = null; if (logUi.open) closeLogRow(); return; }   // 縦はスクロールに任せる
+    try { d.row.setPointerCapture(e.pointerId); } catch (err) { /* なくても動く */ }
+    d.li.classList.add('is-moving');
+  }
+  e.preventDefault();
+  const w = d.li.offsetWidth;
+  d.dx = Math.max(-w, Math.min(0, d.base + mx));
+  const far = d.dx < -w * 0.55;
+  if (far !== d.li.classList.contains('is-far')) { d.li.classList.toggle('is-far', far); if (far) vibrate(10); }
+  setLogDx(d.li, d.dx);
+}
+function logUp(e) {
+  const d = logUi.drag;
+  if (!d || e.pointerId !== d.pid) return;
+  logUi.drag = null;
+  if (!d.axis) { if (logUi.open === d.li) closeLogRow(); return; }   // 開いた行をタップすると閉じる
+  d.li.classList.remove('is-moving');
+  const w = d.li.offsetWidth, ok = e.type !== 'pointercancel';
+  if (ok && d.dx < -w * 0.55) { openLogRow(d.li, -w); askLogDelete(d.row.dataset.id); }   // 大きく引いたら、すぐ確かめ
+  else if (ok && d.dx < -DEL_W / 2) openLogRow(d.li);
+  else closeLogRow(d.li);
+}
+function askLogDelete(id) {
+  const d = state.done.find((x) => x.id === id);
+  if (!d) { closeLogRow(); return; }
+  logUi.confirmId = id;
+  $('log-confirm-sub').innerHTML = '<b class="confirm-item">' + esc(GENRES[d.genre].label + '：' + d.text) + '</b>平均と割合の計算からも外れるよ';
+  $('log-confirm').hidden = false;
+  $('sheet-log').inert = true;
+  $('log-confirm-no').focus({ preventScroll: true });
+}
+function closeLogConfirm(yes) {
+  const id = logUi.confirmId;
+  if (!id) return;
+  logUi.confirmId = null;
+  $('log-confirm').hidden = true;
+  $('sheet-log').inert = false;
+  if (yes) {
+    logUi.open = null;
+    deleteRecord(id);
+    const h = $('log-title');
+    if (h) h.focus({ preventScroll: true });
+    return;
+  }
+  closeLogRow();
+  renderLog();   // 確かめている間に変わったものがあれば、ここで出す
+  const btn = Array.prototype.find.call($('sheet-log').querySelectorAll('.log-del'), (b) => b.dataset.del === id);
+  if (btn) btn.focus({ preventScroll: true });
+}
+/* 割った風船の記録を消す（平均・割合・今週の数からも外れる）。消した直後は「元に戻す」で戻せる */
+function deleteRecord(id) {
+  const i = state.done.findIndex((d) => d.id === id);
+  if (i < 0) return;
+  const d = state.done[i];
+  const logs = state.log.filter((e) => e.id === id);
+  state.done.splice(i, 1);
+  state.log = state.log.filter((e) => e.id !== id);
+  commit();
+  toast('記録を消したよ', { onAction: () => {
+    if (!state.done.some((x) => x.id === d.id)) { state.done.push(d); pruneDone(state); }
+    restoreLogs(logs);
+    commit();
+  } });
 }
 function render() {
   const n = now();
@@ -2036,7 +2191,7 @@ function render() {
   layoutHomes();
   if (motionOK()) startLoop(); else placeStatic();
   if (isOpen('sheet-settings')) renderSettings();
-  if (isOpen('sheet-log')) renderLog();
+  if (isOpen('sheet-log') && !logBusy()) renderLog();
 }
 function refreshOpenSheet() {
   if (isOpen('sheet-detail') && detail.mode === 'view') renderDetail();
@@ -2080,7 +2235,7 @@ function init() {
   $('btn-stuck').addEventListener('click', () => openDiag(null));
   $('btn-help').addEventListener('click', () => openSheet('sheet-help'));
   $('btn-settings').addEventListener('click', () => { renderSettings(); openSheet('sheet-settings'); });
-  $('counts').addEventListener('click', () => { renderLog(); openSheet('sheet-log', { focus: 'log-title' }); });
+  $('counts').addEventListener('click', () => { renderLog(true); openSheet('sheet-log', { focus: 'log-title' }); });
   $('btn-tidy').addEventListener('click', () => {
     const prev = state.tasks.filter((t) => t.pos).map((t) => ({ id: t.id, pos: t.pos }));
     if (!prev.length) { toast('もう整っているよ'); return; }
@@ -2092,7 +2247,36 @@ function init() {
   $('toast-action').addEventListener('click', () => { const fn = toastFn; hideToast(); if (fn) fn(); });
   $('scrim').addEventListener('click', () => { if (sheetEl && !sheetEl.dataset.lock) closeSheet(); });
   document.addEventListener('click', (e) => { if (e.target.closest('[data-close]')) closeSheet(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && sheetEl && !sheetEl.dataset.lock) closeSheet(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (logUi.confirmId) { closeLogConfirm(false); return; }   // 確かめだけ閉じる
+    if (sheetEl && !sheetEl.dataset.lock) closeSheet();
+  });
+
+  const logSheet = $('sheet-log');
+  logSheet.addEventListener('pointerdown', logDown);
+  logSheet.addEventListener('pointermove', logMove);
+  logSheet.addEventListener('pointerup', logUp);
+  logSheet.addEventListener('pointercancel', logUp);
+  logSheet.addEventListener('click', (e) => {
+    const del = e.target.closest('.log-del');
+    if (del) { openLogRow(del.parentElement); askLogDelete(del.dataset.del); }
+  });
+  /* キーボードで「消去」に来たら行を開く・離れたら閉じる。スクロールしたら開いた行を閉じる */
+  logSheet.addEventListener('focusin', (e) => {
+    const del = e.target.closest('.log-del');
+    if (del && !logUi.drag && kbFocus(del)) openLogRow(del.parentElement);
+  });
+  logSheet.addEventListener('focusout', (e) => {
+    const li = e.target.closest('.log-item');
+    if (li && li === logUi.open && !logUi.confirmId && !li.contains(e.relatedTarget)) closeLogRow(li);
+  });
+  logSheet.addEventListener('scroll', () => {
+    if (logUi.open && !logUi.drag && !logUi.confirmId && !logUi.open.contains(document.activeElement)) closeLogRow();
+  }, { passive: true });
+  $('log-confirm-yes').addEventListener('click', () => closeLogConfirm(true));
+  $('log-confirm-no').addEventListener('click', () => closeLogConfirm(false));
+  $('log-confirm').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeLogConfirm(false); });
 
   $('add-form').addEventListener('submit', (e) => { e.preventDefault(); submitAdd(); });
   guardEnter($('add-text'), submitAdd);
@@ -2108,6 +2292,7 @@ function init() {
   $('set-wipe').addEventListener('click', (e) => armTwice(e.currentTarget, 'もう一度押すと、すべて消えます', () => {
     state.tasks = [];
     state.done = [];
+    state.log = [];
     state.settings.timeOffsetMs = 0;
     commit();
     renderSettings();
