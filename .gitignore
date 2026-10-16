@@ -1,0 +1,12 @@
+# 公開しないもの（作業メモ・確認用の写し・控え・社内の検討メモ・試作の写真）
+_作業メモ_非公開.md
+preview.html
+assets/balloon-shape-pink.webp
+docs/参考_*.md
+docs/試作_*/
+
+# OS やツールが作るファイル
+__pycache__/
+Thumbs.db
+desktop.ini
+.DS_Store

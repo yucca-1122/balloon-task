@@ -1,0 +1,2097 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="持っている日数でふくらむ風船で、自分のボールを抱えないためのタスクアプリ">
+<meta name="theme-color" content="#82c6fa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0c1d3e" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ふうせんタスク">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}</style>
+<title>ふうせんタスク</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* Layout: 1画面。上に名前と数、その下に雲の帯（相手待ち）、帯の下が自分の風船の空、下に固定バー。 */
+:root {
+  --bg: #dcebfb;
+  --sky-top: #82c6fa;
+  --sky-bottom: #e6f2f8;
+  --bg-image: url("assets/bg-day.jpg");
+  --ink-2: #2c4460;
+  --hint-bg: rgba(255, 255, 255, .62);
+  --fg: #1b2b40;
+  --muted: #536a84;
+  --line: #c4d6e9;
+  --surface: #ffffff;
+  --surface-2: #eef5fc;
+  --chip: #e1edf9;
+  --meter: #4f78a8;
+  --bar-bg: rgba(244, 249, 255, .9);
+  --scrim: rgba(22, 42, 70, .36);
+  --scrim-light: rgba(22, 42, 70, .14);
+  --warm: #c93d32;
+  --warm-press: #a5322a;
+  --warm-edge: #8a2720;
+  --btn-face: #ffffff;
+  --btn-edge: #a9bfd8;
+  --btn-drop: rgba(27, 43, 64, .16);
+  --on-warm: #ffffff;
+  --move-bg: #fdebe7;
+  --move-fg: #6b1d16;
+  --focus: #1f63c6;
+  --focus-ring: rgba(31, 99, 198, .25);
+  --err: #b3261e;
+  --cloud: #ffffff;
+  --cloud-top: #f3f8ff;
+  --cloud-shade: #cfe0f3;
+  --cloud-hot: #fff4d6;
+  --star: rgba(255, 255, 255, 0);
+  --string: #7f93ab;
+  --toast-bg: #1b2b40;
+  --toast-fg: #f3f8ff;
+  --toast-action: #ffb3a6;
+  --nudge-bg: #ffefc4;
+  --nudge-fg: #6a4400;
+  --wait-glow: rgba(245, 166, 35, .8);
+  --on-balloon: #1d2c44;
+  --ink-shadow: rgba(255, 255, 255, .4);
+  --inner-light: 0;
+  /* 風船の色：ChatGPT で描いた風船（ピンク・ミント・黄）の色を測ったものと、同じ淡さでそろえた3色 */
+  --gb-research: #8fb0f4;
+  --gb-class: #96dfd0;
+  --gb-job: #fcd788;
+  --gb-career: #caa6ea;
+  --gb-life: #fb8e91;
+  --gb-other: #cbc5bd;
+  --gloss: rgba(255, 255, 255, .62);
+  --shade: rgba(8, 26, 56, .22);
+  --glow-amt: 0%;
+  --switch-off: #b4c7dc;
+  --knob: #ffffff;
+  --knob-shadow: 0 1px 3px rgba(20, 40, 70, .3);
+  --sheet-shadow: 0 -10px 34px rgba(20, 50, 90, .18);
+  --card-shadow: 0 16px 44px rgba(20, 50, 90, .24);
+  --g-research: #2f6fd0;
+  --g-class: #1f8a64;
+  --g-job: #d9661a;
+  --g-career: #7a4fd0;
+  --g-life: #d0457f;
+  --g-other: #6f7f90;
+  --font-round: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", system-ui, sans-serif;
+  --font-body: "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", system-ui, sans-serif;
+  --bar-h: 68px;
+  --band-h: 168px;
+  --kb: 0px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0a1630; --sky-top: #0c1d3e; --sky-bottom: #20316e; --bg-image: url("assets/bg-night.jpg"); --ink-2: #a2b5cf; --hint-bg: rgba(10, 21, 44, .55); --fg: #e5eefb; --muted: #a2b5cf; --line: #2b4068;
+    --surface: #14264a; --surface-2: #1a2e57; --chip: #213765; --meter: #8fb3e0; --bar-bg: rgba(10, 21, 44, .9);
+    --scrim: rgba(2, 8, 20, .62); --scrim-light: rgba(2, 8, 20, .36);
+    --warm: #d0473a; --warm-press: #b43b2f; --warm-edge: #7f231c; --btn-face: #1d335f; --btn-edge: #0b1733; --btn-drop: rgba(0, 0, 0, .45); --on-warm: #ffffff; --move-bg: #4a201c; --move-fg: #ffdcd5;
+    --focus: #8fb8ff; --focus-ring: rgba(143, 184, 255, .3); --err: #ff9d8f;
+    --cloud: #23365c; --cloud-top: #1b2b4d; --cloud-shade: #122040; --cloud-hot: #3b5486;
+    --star: rgba(255, 255, 255, .78); --string: #9db0ca;
+    --toast-bg: #e5eefb; --toast-fg: #0f1d38; --toast-action: #b3261e;
+    --nudge-bg: #4b3a10; --nudge-fg: #ffd98a; --wait-glow: rgba(255, 196, 90, .65); --on-balloon: #1d2c44; --ink-shadow: rgba(255, 255, 255, .35); --inner-light: .26;
+    --gloss: rgba(255, 255, 255, .52); --shade: rgba(0, 0, 14, .3); --glow-amt: 42%;
+    --switch-off: #3a5079; --knob: #e5eefb; --knob-shadow: 0 1px 3px rgba(0, 0, 0, .5);
+    --sheet-shadow: 0 -10px 34px rgba(0, 0, 0, .5); --card-shadow: 0 16px 44px rgba(0, 0, 0, .55);
+    --g-research: #4382df; --g-class: #279e75; --g-job: #df7427; --g-career: #8a62dc; --g-life: #db588f; --g-other: #8293a6;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0a1630; --sky-top: #0c1d3e; --sky-bottom: #20316e; --bg-image: url("assets/bg-night.jpg"); --ink-2: #a2b5cf; --hint-bg: rgba(10, 21, 44, .55); --fg: #e5eefb; --muted: #a2b5cf; --line: #2b4068;
+  --surface: #14264a; --surface-2: #1a2e57; --chip: #213765; --meter: #8fb3e0; --bar-bg: rgba(10, 21, 44, .9);
+  --scrim: rgba(2, 8, 20, .62); --scrim-light: rgba(2, 8, 20, .36);
+  --warm: #d0473a; --warm-press: #b43b2f; --warm-edge: #7f231c; --btn-face: #1d335f; --btn-edge: #0b1733; --btn-drop: rgba(0, 0, 0, .45); --on-warm: #ffffff; --move-bg: #4a201c; --move-fg: #ffdcd5;
+  --focus: #8fb8ff; --focus-ring: rgba(143, 184, 255, .3); --err: #ff9d8f;
+  --cloud: #23365c; --cloud-top: #1b2b4d; --cloud-shade: #122040; --cloud-hot: #3b5486;
+  --star: rgba(255, 255, 255, .78); --string: #9db0ca;
+  --toast-bg: #e5eefb; --toast-fg: #0f1d38; --toast-action: #b3261e;
+  --nudge-bg: #4b3a10; --nudge-fg: #ffd98a; --wait-glow: rgba(255, 196, 90, .65); --on-balloon: #1d2c44; --ink-shadow: rgba(255, 255, 255, .35); --inner-light: .26;
+  --gloss: rgba(255, 255, 255, .52); --shade: rgba(0, 0, 14, .3); --glow-amt: 42%;
+  --switch-off: #3a5079; --knob: #e5eefb; --knob-shadow: 0 1px 3px rgba(0, 0, 0, .5);
+  --sheet-shadow: 0 -10px 34px rgba(0, 0, 0, .5); --card-shadow: 0 16px 44px rgba(0, 0, 0, .55);
+  --g-research: #4382df; --g-class: #279e75; --g-job: #df7427; --g-career: #8a62dc; --g-life: #db588f; --g-other: #8293a6;
+  color-scheme: dark;
+}
+
+html { box-sizing: border-box; height: 100%; }
+*, *::before, *::after { box-sizing: inherit; }
+body {
+  margin: 0; height: 100%; overflow: hidden;
+  /* 背景画像（昼／夜）。横長の1枚を、下をそろえて画面いっぱいに（スマホは真ん中、パソコンはほぼ全体が見える）。読み込めないときは同じ色のグラデーション */
+  background: var(--bg-image) center bottom / cover no-repeat, linear-gradient(to bottom, var(--sky-top), var(--sky-bottom)) var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.6;
+  -webkit-tap-highlight-color: transparent; overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+}
+[hidden] { display: none !important; }
+button, input, textarea { font: inherit; color: inherit; }
+button { touch-action: manipulation; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+@supports (word-break: auto-phrase) { h1, h2, h3 { word-break: auto-phrase; text-wrap: balance; } }
+
+/* ---- 枠 ---- */
+.app { height: 100%; display: flex; flex-direction: column; padding-bottom: var(--bar-h); }
+.top {
+  display: grid; grid-template-columns: 1fr auto auto; align-items: center;
+  column-gap: 8px; row-gap: 2px; padding: 10px 16px 8px;
+}
+.top h1 { margin: 0; font: 700 21px/1.3 var(--font-round); letter-spacing: .03em; }
+.counts {
+  grid-column: 1 / -1; margin: 0; font-size: 13px; color: var(--ink-2);
+  font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.counts b { color: var(--fg); font: 700 15px var(--font-round); font-variant-numeric: tabular-nums; margin-inline: 1px; }
+.counts .sep { margin-inline: 6px; color: var(--ink-2); }
+button.counts {
+  -webkit-appearance: none; appearance: none; justify-self: start; max-width: 100%;
+  border: 0; background: none; padding: 2px 0; border-radius: 6px; font-family: inherit; text-align: left; cursor: pointer;
+}
+button.counts:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.counts-go { margin-left: 10px; font: 700 12.5px var(--font-round); color: var(--fg); text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---- 記録 ---- */
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stat { min-width: 0; padding: 12px 14px; border-radius: 12px; background: var(--chip); display: flex; flex-direction: column; gap: 4px; }
+.stat-k { font-size: 12.5px; color: var(--muted); }
+.stat-v { font: 700 22px/1.2 var(--font-round); }
+.genre-chart { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 6px; }
+.gc-row { display: grid; grid-template-columns: 4.4em minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+.gc-name { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+.gc-name .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--g); flex: none; }
+.gc-track { position: relative; height: 24px; }
+.gc-bar { position: absolute; left: 0; top: 6px; height: 12px; min-width: 2px; border-radius: 0 4px 4px 0; background: var(--meter); }
+.gc-line { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--warm); }
+.gc-val { font-size: 13px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.gc-val b { color: var(--fg); }
+.gc-note { display: flex; align-items: center; gap: 8px; }
+.gc-note::before { content: ""; width: 1px; height: 14px; background: var(--warm); flex: none; }
+.log-list { list-style: none; margin: 0; padding: 0; }
+.log-day { margin: 14px 0 2px; font: 700 12.5px var(--font-round); letter-spacing: .04em; color: var(--muted); }
+.log-item { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.log-item .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--g); }
+.log-text { min-width: 0; overflow-wrap: anywhere; }
+.log-sub { font-size: 12.5px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.icon-btn {
+  width: 40px; height: 40px; border-radius: 50%; padding: 0;
+  border: 1.5px solid var(--line); background: transparent; color: var(--fg);
+  font: 700 18px/1 var(--font-round); display: grid; place-items: center;
+}
+.icon-btn:active { background: var(--chip); }
+
+/* ---- 空と雲 ---- */
+.stage { position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: none; }
+.stars {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(circle at 8% 44%, var(--star) 1px, transparent 1.8px),
+    radial-gradient(circle at 23% 62%, var(--star) 1.2px, transparent 2px),
+    radial-gradient(circle at 37% 39%, var(--star) .9px, transparent 1.6px),
+    radial-gradient(circle at 52% 74%, var(--star) 1px, transparent 1.8px),
+    radial-gradient(circle at 66% 51%, var(--star) 1.3px, transparent 2.1px),
+    radial-gradient(circle at 79% 36%, var(--star) .9px, transparent 1.6px),
+    radial-gradient(circle at 91% 66%, var(--star) 1.1px, transparent 1.9px),
+    radial-gradient(circle at 14% 84%, var(--star) .9px, transparent 1.6px),
+    radial-gradient(circle at 72% 88%, var(--star) 1px, transparent 1.8px),
+    radial-gradient(circle at 44% 56%, var(--star) .8px, transparent 1.5px);
+}
+.stars { display: none; }   /* 夜の背景画像に星があるので、CSS の星は出さない */
+.band { position: absolute; left: 0; right: 0; top: 0; height: var(--band-h); pointer-events: none; }
+.band .cloud { opacity: .82; }        /* 雲の帯は少しすかして、背景の空となじませる */
+.band .cloud-shade { opacity: .45; }
+.cloud, .cloud-shade { position: absolute; inset: 0; --c: var(--cloud); --c-top: var(--cloud-top); }
+.cloud-shade { --c: var(--cloud-shade); --c-top: var(--cloud-shade); transform: translateY(5px); }
+.band.is-over .cloud { --c: var(--cloud-hot); --c-top: var(--cloud-hot); }
+.cloud::before, .cloud-shade::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; bottom: 40px;
+  background: linear-gradient(to bottom, transparent 0, var(--c-top) 30px, var(--c));
+}
+/* 雲のふち：幅220pxの柄を横にくり返す（どの画面幅でもつながる。右端の丸は次の柄の左端の丸の写し） */
+.cloud::after, .cloud-shade::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 72px;
+  background:
+    radial-gradient(circle at 18px 24px, var(--c) 31px, transparent 32px),
+    radial-gradient(circle at 72px 32px, var(--c) 37px, transparent 38px),
+    radial-gradient(circle at 128px 22px, var(--c) 29px, transparent 30px),
+    radial-gradient(circle at 182px 33px, var(--c) 36px, transparent 37px),
+    radial-gradient(circle at 238px 24px, var(--c) 31px, transparent 32px);
+  background-size: 220px 72px;
+  background-repeat: repeat-x;
+}
+.band-label {
+  position: absolute; top: 8px; left: 16px; right: 16px; margin: 0;
+  font: 700 12.5px/1.4 var(--font-round); letter-spacing: .05em; color: var(--ink-2);
+}
+.mine-area {
+  position: absolute; left: 0; right: 0; top: var(--band-h); bottom: 0;
+  display: flex; flex-direction: column; align-items: center; pointer-events: none;
+  padding: 10px 16px 12px;
+}
+.ex-note { margin: 0; font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 6px; pointer-events: auto; }
+.link-btn {
+  border: 0; background: none; padding: 6px 4px; color: var(--fg);
+  font: 700 13.5px var(--font-round); text-decoration: underline; text-underline-offset: 3px; border-radius: 6px;
+}
+.link-btn.danger { color: var(--err); }
+.drop-tip { margin: 0; font: 700 13px var(--font-round); color: var(--fg); }
+.empty { margin: auto 0; font: 500 15px var(--font-round); color: var(--muted); text-align: center; }
+.hint { margin: auto 0 0; padding: 4px 12px; border-radius: 999px; background: var(--hint-bg); font-size: 13px; color: var(--ink-2); text-align: center; }
+.layer { position: absolute; inset: 0; pointer-events: none; }
+
+/* ---- 風船 ---- */
+.balloon {
+  --r: 36px; --g: var(--g-other); --ls: 20px;
+  position: absolute; left: 0; top: 0; width: calc(var(--r) * 2);
+  padding: 0; margin: 0; border: 0; background: none; color: var(--on-balloon);
+  display: flex; flex-direction: column; align-items: center;
+  pointer-events: auto; touch-action: none; cursor: grab;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+  will-change: transform;
+}
+.balloon:focus-visible { outline: none; }
+.balloon:focus-visible .b-glow { outline: 3px solid var(--focus); outline-offset: 3px; }
+.b-wrap { position: relative; display: flex; flex-direction: column; align-items: center; width: 100%; }
+/* 風船の本体：ChatGPT で描いた白い風船を「型」にする（assets/balloon-shape.webp：形＝透明度、つやと陰＝灰色の濃淡、結び目つき。前のピンクの型は balloon-shape-pink.webp）。
+   色は CSS でジャンルごとに塗り、その上に濃淡を soft-light で重ねる。光の filter は型で切り抜かれないよう、外側の .b-glow にかける */
+.b-glow {
+  position: relative; display: block; border-radius: 50% 50% 46% 46% / 42% 42% 58% 58%;
+  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--gb) var(--glow-amt), transparent));
+}
+.b-body {
+  position: relative; display: grid; place-items: center;
+  width: calc(var(--r) * 2); height: calc(var(--r) * 2.54);
+  background: var(--gb);
+  -webkit-mask: url("assets/balloon-shape.webp") center / 100% 100% no-repeat;
+  mask: url("assets/balloon-shape.webp") center / 100% 100% no-repeat;
+  transition: transform .15s ease-out;
+}
+.b-body::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: url("assets/balloon-shape.webp") center / 100% 100% no-repeat;
+  mix-blend-mode: soft-light;
+}
+.b-body::after {   /* 夜は内側から灯る（昼は 0） */
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 60% 50% at 50% 42%, rgba(255, 255, 255, var(--inner-light)), transparent 72%);
+  mix-blend-mode: screen;
+}
+.b-text {
+  position: relative; z-index: 1;
+  width: calc(var(--r) * 1.45); margin-top: calc(var(--r) * -.22);
+  font: 700 clamp(10px, calc(var(--r) * .27), 44px)/1.25 var(--font-round);
+  text-align: center; color: var(--on-balloon); text-shadow: 0 1px 1px var(--ink-shadow);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere;
+}
+.b-knot { display: none; }   /* 結び目は型の絵に入っている */
+.b-string { display: block; width: 12px; height: var(--ls); margin-top: -2px; color: color-mix(in srgb, var(--gb) 60%, var(--string)); transform-origin: 50% 0; animation: sway var(--sway, 3.6s) ease-in-out var(--delay, 0s) infinite alternate; }
+.b-badge {
+  margin-top: -1px; padding: 4px 8px; border-radius: 999px;
+  font: 700 11.5px/1 var(--font-round); font-variant-numeric: tabular-nums; white-space: nowrap;
+  background: var(--surface); color: var(--fg); border: 1px solid var(--line);
+}
+.b-badge.is-full { background: var(--warm); color: var(--on-warm); border-color: var(--warm); }
+.b-badge.is-nudge { background: var(--nudge-bg); color: var(--nudge-fg); border-color: var(--nudge-bg); }
+.b-ex {
+  position: absolute; top: calc(var(--r) * .1 - 6px); right: calc(var(--r) * .15 - 8px);
+  padding: 3px 5px; border-radius: 6px; font: 700 10px/1 var(--font-round);
+  background: var(--surface); color: var(--muted); border: 1px solid var(--line); text-shadow: none;
+}
+.balloon.is-passed .b-glow { filter: saturate(.55); }
+/* 相手待ちが3日以上：色が戻って光り、ひもごと左右にゆれる（相手のところで止まっている合図） */
+.balloon.is-passed.is-wait .b-glow { filter: saturate(.95) drop-shadow(0 0 10px var(--wait-glow)); }
+.balloon.is-passed.is-wait .b-wrap { transform-origin: 50% 100%; animation: wobble 1.8s ease-in-out infinite; }
+.balloon.is-full .b-wrap { animation: shiver .2s linear infinite; }
+.balloon.is-danger .b-wrap { animation: shiver-hard .12s linear infinite; }
+.balloon { z-index: var(--z, 1); }   /* 古い風船ほど前（--z は描き直しのたびに決める） */
+.balloon.is-danger .b-glow { filter: none; }
+.balloon.is-dragging { cursor: grabbing; z-index: 9999; }
+.balloon.is-dragging .b-body { transform: scale(1.05); }
+.shard { position: absolute; z-index: 9000; left: 0; top: 0; width: 10px; height: 7px; border-radius: 2px; background: var(--g); pointer-events: none; }
+.pan { position: absolute; z-index: 9000; left: 0; top: 0; margin: 0; font: 700 30px/1 var(--font-round); color: var(--warm); pointer-events: none; white-space: nowrap; }
+@keyframes sway { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
+@keyframes wobble { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+@keyframes shiver {
+  0% { transform: translate(0, 0); } 25% { transform: translate(1.3px, -.8px); }
+  50% { transform: translate(-1.2px, .7px); } 75% { transform: translate(.9px, 1.1px); } 100% { transform: translate(0, 0); }
+}
+@keyframes shiver-hard {
+  0% { transform: translate(0, 0) rotate(0); } 25% { transform: translate(3px, -2px) rotate(1.2deg); }
+  50% { transform: translate(-3px, 1.5px) rotate(-1.2deg); } 75% { transform: translate(2px, 2.5px) rotate(.8deg); } 100% { transform: translate(0, 0) rotate(0); }
+}
+
+/* ---- 下のバーとボタン ---- */
+.bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  display: grid; grid-template-columns: 1fr 1.35fr; gap: 12px;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+  background: var(--bar-bg); border-top: 1px solid var(--line);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+/* 押すと沈む立体ボタン：下に同じ形の「厚み」（濃い色）とやわらかい影。乗せると少し浮き、押すと沈み、離すとばねで戻る */
+.btn {
+  --edge: var(--btn-edge);
+  min-height: 48px; padding: 10px 16px; border-radius: 14px;
+  border: 1.5px solid var(--line); background: var(--btn-face); color: var(--fg);
+  font: 700 16px/1.3 var(--font-round); text-align: center;
+  transform: translateY(-4px);
+  box-shadow: 0 4px 0 var(--edge), 0 6px 10px var(--btn-drop);
+  transition: transform .6s cubic-bezier(.3, .7, .4, 1), box-shadow .6s cubic-bezier(.3, .7, .4, 1), filter .25s;
+  -webkit-tap-highlight-color: transparent;
+}
+@media (hover: hover) {
+  .btn:hover {
+    transform: translateY(-6px); box-shadow: 0 6px 0 var(--edge), 0 9px 14px var(--btn-drop); filter: brightness(1.04);
+    transition-duration: .25s; transition-timing-function: cubic-bezier(.3, .7, .4, 1.5);
+  }
+}
+.btn:active { transform: translateY(-2px); box-shadow: 0 2px 0 var(--edge), 0 3px 4px var(--btn-drop); transition-duration: .034s; background: var(--chip); }
+.btn-primary { --edge: var(--warm-edge); background: var(--warm); border-color: var(--warm); color: var(--on-warm); }
+.btn-primary:active { background: var(--warm-press); border-color: var(--warm-press); }
+.btn-small { min-height: 40px; padding: 6px 16px; font-size: 14.5px; border-radius: 12px; }
+.btn-danger { color: var(--err); }
+.btn-danger.is-armed { --edge: var(--warm-edge); background: var(--err); border-color: var(--err); color: var(--on-warm); }
+
+/* ---- トースト ---- */
+.toast {
+  position: fixed; z-index: 60; left: 16px; right: 16px; margin: 0 auto; max-width: 480px;
+  bottom: max(calc(var(--bar-h) + env(safe-area-inset-bottom, 0px) + 12px), calc(var(--kb) + 12px));
+  display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 16px; min-height: 52px;
+  border-radius: 14px; background: var(--toast-bg); color: var(--toast-fg); box-shadow: var(--card-shadow);
+  font-size: 15px; line-height: 1.5;
+  opacity: 0; transform: translateY(10px); visibility: hidden; pointer-events: none;
+  transition: opacity .18s, transform .18s, visibility 0s .18s;
+}
+.toast.is-on { opacity: 1; transform: none; visibility: visible; pointer-events: auto; transition: opacity .18s, transform .18s; }
+.toast-msg { flex: 1; min-width: 0; }
+.toast-action {
+  flex: none; border: 0; background: none; color: var(--toast-action);
+  font: 700 15px var(--font-round); padding: 8px 10px; border-radius: 10px;
+}
+
+/* ---- シート ---- */
+.scrim { position: fixed; inset: 0; z-index: 30; background: var(--scrim); }
+.scrim.is-light { background: var(--scrim-light); }
+.sheet { position: fixed; z-index: 40; left: 0; right: 0; margin: 0 auto; background: var(--surface); color: var(--fg); }
+.sheet-bottom {
+  bottom: var(--kb); max-width: 560px; border-radius: 22px 22px 0 0; box-shadow: var(--sheet-shadow);
+  max-height: calc(100% - env(safe-area-inset-top, 0px) - 28px - var(--kb));
+  overflow-y: auto; overscroll-behavior: contain;
+  padding: 6px 16px calc(22px + env(safe-area-inset-bottom, 0px));
+}
+.sheet-top {
+  top: calc(env(safe-area-inset-top, 0px) + 12px); left: 16px; right: 16px; max-width: 520px;
+  border-radius: 20px; box-shadow: var(--card-shadow); padding: 18px 16px 16px;
+  max-height: calc(100% - env(safe-area-inset-top, 0px) - 24px - var(--kb)); overflow-y: auto;
+}
+.sheet-float {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); left: 16px; right: 16px; max-width: 400px;
+  border-radius: 24px; box-shadow: var(--card-shadow); padding: 20px 20px 18px;
+}
+.grabber { width: 40px; height: 5px; border-radius: 3px; background: var(--line); margin: 4px auto 10px; }
+.sheet-head { display: flex; align-items: flex-start; gap: 12px; }
+.sheet-head > :first-child { flex: 1; min-width: 0; }
+.sheet h2 { margin: 0; font: 700 21px/1.45 var(--font-round); }
+.sheet h3 { margin: 22px 0 8px; font: 700 16px/1.5 var(--font-round); }
+.sheet p { margin: 0; }
+.sheet h2:focus { outline: none; }
+.sub { margin-top: 6px !important; color: var(--muted); font-size: 14.5px; }
+.row-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+.row-btns.wide-right { grid-template-columns: 1fr 1.4fr; }
+
+/* 追加 */
+.genres { display: flex; flex-wrap: wrap; gap: 8px; border: 0; padding: 0; margin: 14px 0 0; min-width: 0; }
+.genre { position: relative; }
+.genre input { position: absolute; inset: 0; opacity: 0; margin: 0; width: 100%; height: 100%; cursor: pointer; }
+.genre span {
+  display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 6px 14px;
+  border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface);
+  font: 700 14.5px/1 var(--font-round); color: var(--fg);
+}
+.genre span::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--g); }
+.genre input:checked + span { background: var(--g); border-color: var(--g); color: var(--on-balloon); }
+.genre input:checked + span::before { background: var(--on-balloon); }
+.genre input:focus-visible + span { outline: 3px solid var(--focus); outline-offset: 2px; }
+.input-wrap { position: relative; margin-top: 14px; }
+.field-input {
+  width: 100%; min-height: 50px; padding: 12px 54px 12px 14px; border-radius: 12px;
+  border: 1.5px solid var(--line); background: var(--surface-2); color: var(--fg); font-size: 16px;
+}
+.field-input.no-count { padding-right: 14px; }
+.field-input::placeholder { color: var(--muted); opacity: 1; }
+.field-input:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px var(--focus-ring); }
+.char-count { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; pointer-events: none; }
+.err { margin: 6px 2px 0 !important; color: var(--err); font-size: 14px; font-weight: 700; }
+
+/* 詳細 */
+.meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 14px; color: var(--muted); padding-top: 8px; }
+.meta .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--g); flex: none; }
+.ex-tag { padding: 2px 7px; border-radius: 6px; border: 1px solid var(--line); font: 700 11px/1.4 var(--font-round); color: var(--muted); }
+.detail-text { margin-top: 10px !important; font-size: 22px !important; overflow-wrap: anywhere; }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+.actions .span2 { grid-column: 1 / -1; }
+.minor { display: flex; gap: 16px; margin-top: 12px; justify-content: flex-end; }
+
+/* つまずき */
+.task-chip { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; margin: 6px 0 10px !important; padding: 6px 12px; border-radius: 10px; background: var(--chip); font-size: 14px; }
+.task-chip .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--g); flex: none; }
+.task-chip span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.opts { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 10px; }
+.opt {
+  width: 100%; display: grid; grid-template-columns: 30px 1fr; align-items: center; gap: 12px;
+  min-height: 66px; padding: 14px 16px; text-align: left;
+  border-radius: 16px; border: 1.5px solid var(--line); background: var(--surface-2);
+  font: 700 16px/1.45 var(--font-round); color: var(--fg);
+}
+.opt:active { background: var(--chip); }
+.opt-n { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); border: 1.5px solid var(--line); font: 700 14px/1 var(--font-round); color: var(--muted); font-variant-numeric: tabular-nums; }
+.ans-place { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); padding-top: 8px; }
+.ans-place b { padding: 3px 10px; border-radius: 999px; background: var(--chip); color: var(--fg); font: 700 13px/1.4 var(--font-round); }
+.ans-title { margin-top: 10px !important; }
+.lbl { margin: 18px 0 6px !important; font: 700 12.5px/1.4 var(--font-round); letter-spacing: .06em; color: var(--muted); }
+.ans-why { line-height: 1.8; }
+.ans-move { padding: 14px 16px; border-radius: 14px; background: var(--move-bg); color: var(--move-fg); font: 700 16.5px/1.75 var(--font-round); }
+.tabs { display: inline-flex; gap: 4px; padding: 3px; margin-bottom: 8px; border-radius: 12px; background: var(--chip); }
+.tab { border: 0; background: transparent; padding: 7px 18px; border-radius: 9px; font: 700 14px/1.2 var(--font-round); color: var(--muted); }
+.tab[aria-selected="true"] { background: var(--surface); color: var(--fg); }
+.tpl {
+  display: block; width: 100%; min-height: 112px; resize: vertical; padding: 12px 14px;
+  border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface-2); color: var(--fg);
+  font-size: 16px; line-height: 1.75;
+}
+.tpl:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px var(--focus-ring); }
+.tpl-row { display: flex; justify-content: flex-end; margin-top: 8px; }
+.scene-btn { width: 100%; margin-top: 14px; }
+.ans-research { margin-top: 20px !important; font-size: 13px; line-height: 1.7; color: var(--muted); }
+.ans-research b { display: block; font: 700 12px/1.4 var(--font-round); letter-spacing: .06em; margin-bottom: 2px; }
+.motto { margin-top: 20px !important; padding-top: 14px; border-top: 1px dashed var(--line); text-align: center; font: 700 15px/1.6 var(--font-round); }
+
+/* 考え方 */
+.help-body p { line-height: 1.85; margin-top: 10px; }
+.help-motto { margin-top: 18px !important; padding: 14px 16px; border-radius: 14px; background: var(--move-bg); color: var(--move-fg); text-align: center; font: 700 18px/1.5 var(--font-round); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+.side { min-width: 0; padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--line); }
+.side h3 { margin: 0 0 6px; font-size: 15px; }
+.side ul { margin: 0; padding-left: 1.1em; font-size: 14px; line-height: 1.8; }
+.scenes { list-style: none; counter-reset: s; margin: 0; padding: 0; display: grid; gap: 10px; }
+.scenes li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; line-height: 1.6; }
+.scenes li::before {
+  counter-increment: s; content: counter(s); width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--chip); font: 700 13px/1 var(--font-round);
+}
+.scenes b { font-family: var(--font-round); margin-right: 6px; }
+@media (max-width: 340px) { .two { grid-template-columns: 1fr; } }
+
+/* 設定 */
+.set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.set-row label, .set-row > span { flex: 1; min-width: 0; font-weight: 700; }
+.switch {
+  -webkit-appearance: none; appearance: none; flex: none; position: relative; margin: 0;
+  width: 52px; height: 32px; border-radius: 999px; background: var(--switch-off); cursor: pointer; transition: background .15s;
+}
+.switch::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%;
+  background: var(--knob); box-shadow: var(--knob-shadow); transition: transform .15s;
+}
+.switch:checked { background: var(--warm); }
+.switch:checked::after { transform: translateX(20px); }
+.set-block { padding: 14px 0; border-bottom: 1px solid var(--line); }
+.set-block h3 { margin: 0; display: flex; align-items: center; gap: 8px; }
+.pill { padding: 2px 8px; border-radius: 999px; background: var(--nudge-bg); color: var(--nudge-fg); font: 700 11.5px/1.5 var(--font-round); }
+.small { font-size: 13.5px; color: var(--muted); margin-top: 4px !important; }
+.time-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+.time-now { margin-top: 8px !important; font-size: 14px; font-variant-numeric: tabular-nums; }
+.store { margin-top: 14px !important; font-size: 13.5px; color: var(--muted); }
+.wipe { width: 100%; margin-top: 16px; }
+
+/* 初回の説明 */
+.onb-art { position: relative; height: 112px; margin: 0 0 12px; border-radius: 16px; background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom)); overflow: hidden; }
+.onb-art .balloon { cursor: default; pointer-events: none; }
+.onb-art .mini-cloud { position: absolute; left: 0; right: 0; top: 0; height: 64px; }
+.onb-title { margin-top: 2px !important; font-size: 24px !important; }
+.onb-body { margin-top: 8px !important; line-height: 1.8; }
+.onb-foot { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
+.dots { flex: 1; display: flex; gap: 6px; }
+.dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+.dots span.on { background: var(--warm); width: 20px; border-radius: 4px; }
+.onb-foot .btn { min-width: 132px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top">
+    <h1>ふうせんタスク</h1>
+    <button class="icon-btn" id="btn-help" type="button" aria-label="考え方">？</button>
+    <button class="icon-btn" id="btn-settings" type="button" aria-label="設定">⋯</button>
+    <button class="counts" id="counts" type="button">持ってる <b id="n-mine">0</b><span class="sep">・</span>相手待ち <b id="n-passed">0</b><span class="sep">・</span>今週割った <b id="n-week">0</b><span class="counts-go">記録</span></button>
+  </header>
+  <main class="stage" id="stage">
+    <div class="stars" aria-hidden="true"></div>
+    <div class="band" id="band">
+      <div class="cloud-shade" aria-hidden="true"></div>
+      <div class="cloud" aria-hidden="true"></div>
+      <p class="band-label" id="band-label">相手待ち（ゆっくりふくらむ）</p>
+    </div>
+    <div class="mine-area" id="mine-area">
+      <p class="ex-note" id="ex-note" hidden>これは例の風船です<button class="link-btn" id="ex-clear" type="button">消す</button></p>
+      <p class="drop-tip" id="drop-tip" hidden>ここで離すと、自分のボールに戻る</p>
+      <p class="empty" id="empty" hidden>いま抱えている風船はないよ</p>
+      <p class="hint" id="hint" hidden>ダブルタップで割る ・ 上の雲へ動かすと渡す</p>
+    </div>
+    <div class="layer" id="layer" role="group" aria-label="風船"></div>
+  </main>
+</div>
+<nav class="bar" id="bar" aria-label="操作">
+  <button class="btn" id="btn-stuck" type="button">つまずいた</button>
+  <button class="btn btn-primary" id="btn-add" type="button">＋ 追加</button>
+</nav>
+
+<div class="scrim" id="scrim" hidden></div>
+
+<section class="sheet sheet-float" id="sheet-onb" role="dialog" aria-modal="true" aria-labelledby="onb-title" hidden>
+  <div class="onb-art" id="onb-art" aria-hidden="true"></div>
+  <p class="sr-only" id="onb-step"></p>
+  <h2 class="onb-title" id="onb-title" tabindex="-1"></h2>
+  <p class="onb-body" id="onb-body"></p>
+  <div class="onb-foot">
+    <div class="dots" id="onb-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+    <button class="btn btn-primary" id="onb-next" type="button">次へ</button>
+  </div>
+</section>
+
+<section class="sheet sheet-top" id="sheet-add" role="dialog" aria-modal="true" aria-labelledby="add-title" hidden>
+  <form id="add-form" novalidate>
+    <h2 id="add-title" tabindex="-1">いま、何を抱えてる？</h2>
+    <fieldset class="genres" id="add-genres">
+      <legend class="sr-only">ジャンル</legend>
+      <label class="genre" style="--g: var(--g-research)"><input type="radio" name="add-genre" id="add-g-research" value="research"><span>研究</span></label>
+      <label class="genre" style="--g: var(--g-class)"><input type="radio" name="add-genre" id="add-g-class" value="class"><span>授業</span></label>
+      <label class="genre" style="--g: var(--g-job)"><input type="radio" name="add-genre" id="add-g-job" value="job"><span>バイト</span></label>
+      <label class="genre" style="--g: var(--g-career)"><input type="radio" name="add-genre" id="add-g-career" value="career"><span>就活</span></label>
+      <label class="genre" style="--g: var(--g-life)"><input type="radio" name="add-genre" id="add-g-life" value="life"><span>生活</span></label>
+      <label class="genre" style="--g: var(--g-other)"><input type="radio" name="add-genre" id="add-g-other" value="other"><span>その他</span></label>
+    </fieldset>
+    <div class="input-wrap">
+      <label class="sr-only" for="add-text">ひとこと</label>
+      <input class="field-input" id="add-text" name="add-text" type="text" maxlength="30" autocomplete="off" enterkeyhint="enter" placeholder="ひとことで（例：論文を1本読む）" aria-describedby="add-err">
+      <span class="char-count" id="add-count" aria-hidden="true">0/30</span>
+    </div>
+    <p class="err" id="add-err" hidden>ひとこと書いてね</p>
+    <div class="row-btns wide-right">
+      <button class="btn" id="add-home" type="button">ホームへ</button>
+      <button class="btn btn-primary" id="add-submit" type="submit">風船にする</button>
+    </div>
+  </form>
+</section>
+
+<section class="sheet sheet-bottom" id="sheet-detail" role="dialog" aria-modal="true" aria-labelledby="detail-title" hidden></section>
+
+<section class="sheet sheet-bottom" id="sheet-diag" role="dialog" aria-modal="true" aria-labelledby="diag-title" hidden></section>
+
+<section class="sheet sheet-bottom" id="sheet-log" role="dialog" aria-modal="true" aria-labelledby="log-title" hidden></section>
+
+<section class="sheet sheet-bottom" id="sheet-help" role="dialog" aria-modal="true" aria-labelledby="help-title" hidden>
+  <div class="grabber" aria-hidden="true"></div>
+  <div class="sheet-head">
+    <h2 id="help-title" tabindex="-1">抱えている間に、相手の側でふくらむもの</h2>
+    <button class="icon-btn" type="button" data-close aria-label="閉じる">×</button>
+  </div>
+  <div class="help-body">
+    <p>「ちゃんと返そう」と思って、LINE の返事を寝かせたことはある？ 待っている相手は不安になっていくし、自分もだんだん返しにくくなる。</p>
+    <p>仕事や研究も同じ。自分の番のタスクを持っている間、相手の側で「待ち時間」「期待」「方向のズレ」がふくらんでいく。持っている本人には見えない。</p>
+    <p class="help-motto"><strong>ボールは、ひと手間足して、すぐ返す</strong></p>
+    <div class="two">
+      <div class="side"><h3>抱えすぎ</h3><ul><li>完璧になるまで出さない</li><li>聞かない</li><li>返さない</li></ul></div>
+      <div class="side"><h3>投げすぎ</h3><ul><li>確かめずに作る</li><li>丸投げで聞く</li><li>雑なまま出す</li></ul></div>
+    </div>
+    <p>どっちも止まる。真ん中は、自分の案を少し足して、早く渡すこと。</p>
+    <h3>止まりやすい4つの場面</h3>
+    <ol class="scenes">
+      <li><span><b>頼まれた時</b>「何のため？」を確かめる</span></li>
+      <li><span><b>始める時</b>15分の一歩に切る</span></li>
+      <li><span><b>途中</b>最初の1つを見せる</span></li>
+      <li><span><b>返す時</b>まず一言返す</span></li>
+    </ol>
+    <h3>頼む側（先輩・先生）へ</h3>
+    <p>目的・期限・途中で見せる日を、最初に言う。それだけで止まる人が減る。</p>
+  </div>
+</section>
+
+<section class="sheet sheet-bottom" id="sheet-settings" role="dialog" aria-modal="true" aria-labelledby="set-title" hidden>
+  <div class="grabber" aria-hidden="true"></div>
+  <div class="sheet-head">
+    <h2 id="set-title" tabindex="-1">設定</h2>
+    <button class="icon-btn" type="button" data-close aria-label="閉じる">×</button>
+  </div>
+  <div class="set-row">
+    <label for="set-openadd">起動したら追加画面を開く</label>
+    <input class="switch" type="checkbox" role="switch" id="set-openadd">
+  </div>
+  <div class="set-row">
+    <label for="set-sound">割るときの音</label>
+    <input class="switch" type="checkbox" role="switch" id="set-sound">
+  </div>
+  <div class="set-block">
+    <h3>時間を進める <span class="pill">試作用</span></h3>
+    <p class="small">ふくらみ方を見るための、試作だけのボタン</p>
+    <div class="time-btns">
+      <button class="btn btn-small" id="time-1" type="button">＋1日</button>
+      <button class="btn btn-small" id="time-3" type="button">＋3日</button>
+      <button class="btn btn-small" id="time-reset" type="button">元に戻す</button>
+    </div>
+    <p class="time-now" id="time-now" aria-live="polite">いまは進めていない</p>
+  </div>
+  <div class="set-row" id="set-ex-row" hidden>
+    <span>例の風船があります</span>
+    <button class="btn btn-small" id="set-ex-clear" type="button">例の風船を消す</button>
+  </div>
+  <p class="store" id="set-store">保存先：この端末のブラウザ</p>
+  <button class="btn btn-danger wipe" id="set-wipe" type="button">すべて消す</button>
+</section>
+
+<div class="toast" id="toast">
+  <span class="toast-msg" id="toast-msg"></span>
+  <button class="toast-action" id="toast-action" type="button" hidden>元に戻す</button>
+</div>
+<div class="sr-only" id="sr-live" aria-live="polite"></div>
+
+<script>
+(function () {
+'use strict';
+
+/* ===== 決まりごと ===== */
+const DAY = 86400000;
+const STORE_KEY = 'balloon-task:v1';
+const MOTTO = 'ボールは、ひと手間足して、すぐ返す';
+const GENRES = {
+  research: { label: '研究', v: '--g-research' },
+  class: { label: '授業', v: '--g-class' },
+  job: { label: 'バイト', v: '--g-job' },
+  career: { label: '就活', v: '--g-career' },
+  life: { label: '生活', v: '--g-life' },
+  other: { label: 'その他', v: '--g-other' }
+};
+const FATAL = ['invalid_argument', 'not_granted', 'capability_disabled', 'capability_removed', 'transform_error', 'revoked', 'quota_exceeded'];
+
+const ANSWERS = [
+  { key: 1, option: '何をすればいいか、はっきりしない', place: '頼まれた時',
+    title: '「何のため？」を、自分の言葉で確かめよう',
+    why: '目的があいまいなまま作ると、がんばるほど的を外す。成果を一番下げるのは「何を期待されているか分からない」状態だ、という研究がある。',
+    move: '自分の理解を1文にして「これで合っていますか？」と聞く。「何をすればいいですか？」と丸ごと聞くより、案を添えたほうが伝わる。',
+    tpl: 'お疲れさまです。〇〇の件、△△のため（□□に使う）という理解で合っていますか？ まずは××から始めようと思っています。',
+    btn: 'pass',
+    research: '役割のストレス3種（あいまい・板ばさみ・多すぎ）のうち、成果を一番下げていたのは「あいまい」だった（515研究のメタ分析、Sawhney ほか 2025）' },
+  { key: 2, option: 'やることは分かるけど、手がつかない', place: '始める時',
+    title: '一歩目を、15分で終わる大きさに切ろう',
+    why: '大きなゴールを見上げると、人は動けなくなる。近くて小さな目標のほうが、進みも自信も伸びる。',
+    move: '15分で終わることを1つだけ書いて、それだけやる（例：資料を開いて、見出しだけ並べる）。',
+    step: true,
+    research: '近い小さな目標を立てた子どもは、遠い目標だけの子どもより、上達も自信も伸びた（Bandura & Schunk 1981）' },
+  { key: 3, option: '途中まであるけど、まだ見せられない', place: '途中',
+    title: '完成を待たずに、最初の1つだけ見せよう',
+    why: '方向のズレは、時間がたつほど直すのが大変になる。それに、止めているのは「高い基準」より「ダメだと思われたくない」怖さのことが多い。',
+    move: '今ある分を、そのまま5分で送る。見てほしいのは「方向が合っているか」だけ、と書き添える。',
+    tpl: 'お疲れさまです。〇〇の件、途中ですが方向だけ見ていただけますか？ いまここまでです。この進め方で合っていますか？',
+    btn: 'pass',
+    research: '失敗を恐れる完璧主義は先延ばしと結びつき、高い基準を持つこと自体はむしろ先延ばしを減らしていた（約1万人分のメタ分析、Sirois ほか 2017）' },
+  { key: 4, option: '返事や質問を、まだ送れていない', place: '返す時',
+    title: '中身はあとでいい。まず一言だけ返そう',
+    why: '持っている間、相手の側では「待ち」と「不安」がふくらんでいく。既読のまま寝かせた返事ほど、自分も返しにくくなる。',
+    move: '受け取ったことと、いつ返すかだけ送る。質問なら「自分はこう考えたけど合っていますか？」の形にする。',
+    tabs: [
+      { key: 'reply', label: '返事', tpl: 'ご連絡ありがとうございます。確認して、〇日までにお返事します。' },
+      { key: 'ask', label: '質問', tpl: '〇〇で詰まっています。△△だと考えたのですが、この理解で合っていますか？' }
+    ],
+    btn: 'pass',
+    research: '難しいことを詳しい人に聞いた人は、聞かなかった人より「有能」に見られた（Brooks ほか 2015）' },
+  { key: 5, option: '出したのに、やり直しになった', place: '出した後',
+    title: '早く出すのは正解。次は「ひと手間」足してから',
+    why: '確かめずに作ったり、自分の考えを足さずに渡したりすると、相手が全部考えることになる。',
+    move: '出し直す前に2つだけ確かめる。①目的は確かめた？ ②「自分はこうしたい」を1行足した？',
+    tpl: 'ご指摘ありがとうございます。△△の意図だと理解しました。□□のように直して、〇日にもう一度お見せします。',
+    btn: 'return',
+    research: '自分でできるようになるために聞く人は評価が上がり、答えだけもらう人は下がっていた（Liu ほか 2021）' }
+];
+
+/* ===== 小道具 ===== */
+const $ = (id) => document.getElementById(id);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const clone = (o) => JSON.parse(JSON.stringify(o));
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ESC[c]);
+const reducedMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+const motionOK = () => !reducedMQ.matches;
+function newId() {
+  try { if (window.crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID(); } catch (e) { /* 下へ */ }
+  return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+}
+function num(v, fb) { const n = Number(v); return Number.isFinite(n) ? n : (Number.isFinite(Number(fb)) ? Number(fb) : Date.now()); }
+function vibrate(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* 無ければ何もしない */ } }
+
+/* ===== 割れる音（音のファイルは使わず、その場で合成する） ===== */
+const sfx = { ctx: null, noise: null };
+function audioCtx() {
+  if (sfx.ctx) return sfx.ctx;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  try {
+    const c = new AC();
+    const len = Math.floor(c.sampleRate * 0.6);
+    const buf = c.createBuffer(1, len, c.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    sfx.ctx = c;
+    sfx.noise = buf;
+  } catch (e) { return null; }
+  return sfx.ctx;
+}
+function resumeAudio(c) {
+  try { const p = c.resume(); if (p && p.catch) p.catch(() => { /* 次の操作でもう一度 */ }); } catch (e) { /* 同上 */ }
+}
+/* iPhone は操作の中でしか音を出せないので、触るたびに起こしておく */
+function wakeAudio() {
+  if (!state || state.settings.sound === false) return;
+  const c = audioCtx();
+  if (c && c.state !== 'running') resumeAudio(c);
+}
+['pointerup', 'touchend', 'click', 'keydown'].forEach((type) => document.addEventListener(type, wakeAudio, { capture: true, passive: true }));
+
+/* パン！ size＝風船の大きさ（基準の何倍か）。大きいほど低く、長く、大きく鳴る */
+function playPop(size) {
+  if (!state || state.settings.sound === false) return;
+  const c = audioCtx();
+  if (!c) return;
+  if (c.state !== 'running') resumeAudio(c);
+  try {
+    const s = Math.sqrt(clamp(size || 1, 0.6, 5.5));   // 大きくなりすぎた風船でも音がこもりすぎないよう、平方根でゆるく効かせる
+    const t = c.currentTime + 0.01;
+    const jit = () => 0.88 + Math.random() * 0.24;
+    const comp = c.createDynamicsCompressor();
+    comp.threshold.value = -14; comp.knee.value = 6; comp.ratio.value = 8; comp.attack.value = 0.001; comp.release.value = 0.08;
+    const master = c.createGain();
+    master.gain.value = 0.5 + 0.15 * s;
+    comp.connect(master);
+    master.connect(c.destination);
+    const burst = (type, freq, q, peak, dur) => {
+      const src = c.createBufferSource();
+      src.buffer = sfx.noise;
+      const f = c.createBiquadFilter();
+      f.type = type; f.frequency.value = freq; f.Q.value = q;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(peak, t + 0.002);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(f); f.connect(g); g.connect(comp);
+      src.start(t, Math.random() * 0.25);
+      src.stop(t + dur + 0.03);
+    };
+    burst('highpass', (1800 / s) * jit(), 0.7, 1.0, (0.035 + 0.02 * s) * jit());  // 乾いた「パ」
+    burst('bandpass', (900 / s) * jit(), 0.9, 0.8, (0.08 + 0.05 * s) * jit());    // 胴の「ン」
+    const o = c.createOscillator();                                                // 押し（イヤホンだとよく分かる）
+    o.type = 'sine';
+    o.frequency.setValueAtTime(240 / s, t);
+    o.frequency.exponentialRampToValueAtTime(70 / s, t + 0.09);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.6, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+    o.connect(g); g.connect(comp);
+    o.start(t);
+    o.stop(t + 0.15);
+  } catch (e) { /* 鳴らなくても、割る動きはそのまま */ }
+}
+
+/* ===== 状態 ===== */
+let state = null;
+let everSynced = false;
+const now = () => Date.now() + ((state && state.settings.timeOffsetMs) || 0);
+
+function defaultState() {
+  const t = Date.now(), h = 3600000;
+  return {
+    tasks: [
+      { id: 'ex-1', text: '論文を1本読む', genre: 'research', createdAt: t - DAY - h, heldSince: t - DAY - h, status: 'mine', passedAt: null, example: true },
+      { id: 'ex-2', text: 'レポートの構成を考える', genre: 'class', createdAt: t - 3 * DAY - h, heldSince: t - 3 * DAY - h, status: 'mine', passedAt: null, example: true },
+      { id: 'ex-3', text: '先輩に返信する', genre: 'life', createdAt: t - 5 * DAY - h, heldSince: t - 5 * DAY - h, status: 'mine', passedAt: null, example: true },
+      { id: 'ex-4', text: 'ゼミ発表の目次を見せた', genre: 'research', createdAt: t - 3 * DAY - h, heldSince: t - 3 * DAY - h, status: 'passed', passedAt: t - 2 * DAY - h, example: true }
+    ],
+    done: [],
+    log: [],
+    settings: { openAddOnLaunch: true, sound: true, lastGenre: 'research', timeOffsetMs: 0, onboarded: false, hintDone: false },
+    updatedAt: 0
+  };
+}
+
+function normPos(p) {
+  if (!p || typeof p !== 'object') return null;
+  const x = Number(p.x), y = Number(p.y);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+  return { x: Math.round(clamp(x, 0, 1) * 1000) / 1000, y: Math.round(clamp(y, 0, 1) * 1000) / 1000 };
+}
+
+function normalize(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const base = defaultState().settings;
+  const s = raw.settings && typeof raw.settings === 'object' ? raw.settings : {};
+  const out = {
+    tasks: [], done: [], log: [],
+    settings: {
+      openAddOnLaunch: typeof s.openAddOnLaunch === 'boolean' ? s.openAddOnLaunch : base.openAddOnLaunch,
+      sound: typeof s.sound === 'boolean' ? s.sound : base.sound,
+      lastGenre: GENRES[s.lastGenre] ? s.lastGenre : base.lastGenre,
+      timeOffsetMs: Number.isFinite(Number(s.timeOffsetMs)) ? Number(s.timeOffsetMs) : 0,
+      onboarded: !!s.onboarded,
+      hintDone: !!s.hintDone
+    },
+    updatedAt: Number(raw.updatedAt) || 0
+  };
+  const seen = new Set();
+  (Array.isArray(raw.tasks) ? raw.tasks : []).forEach((t) => {
+    if (!t || typeof t.text !== 'string' || !t.id || seen.has(String(t.id))) return;
+    seen.add(String(t.id));
+    const passed = t.status === 'passed';
+    const o = {
+      id: String(t.id), text: t.text.slice(0, 60), genre: GENRES[t.genre] ? t.genre : 'other',
+      createdAt: num(t.createdAt), heldSince: num(t.heldSince, t.createdAt),
+      status: passed ? 'passed' : 'mine', passedAt: passed ? num(t.passedAt, t.heldSince) : null
+    };
+    if (t.example) o.example = true;
+    if (passed && typeof t.nudgedAt === 'number' && Number.isFinite(t.nudgedAt)) o.nudgedAt = t.nudgedAt;
+    const p = normPos(t.pos);
+    if (p) o.pos = p;
+    out.tasks.push(o);
+  });
+  (Array.isArray(raw.done) ? raw.done : []).forEach((d) => {
+    if (!d || typeof d.text !== 'string' || !d.id) return;
+    const o = { id: String(d.id), text: d.text.slice(0, 60), genre: GENRES[d.genre] ? d.genre : 'other', doneAt: num(d.doneAt) };
+    if (d.example) o.example = true;
+    if (typeof d.heldMs === 'number' && Number.isFinite(d.heldMs) && d.heldMs >= 0) o.heldMs = d.heldMs;
+    if (d.fromPassed) o.fromPassed = true;
+    out.done.push(o);
+  });
+  /* ボールを返すまでの記録（渡した・割ったときに、何日持っていたか） */
+  (Array.isArray(raw.log) ? raw.log : []).forEach((e) => {
+    if (!e || !e.id || typeof e.heldMs !== 'number' || !Number.isFinite(e.heldMs) || e.heldMs < 0 || !Number.isFinite(Number(e.at))) return;
+    const o = { id: String(e.id), kind: e.kind === 'pass' ? 'pass' : 'pop', heldMs: e.heldMs, at: Number(e.at) };
+    if (GENRES[e.genre]) o.genre = e.genre;
+    out.log.push(o);
+  });
+  pruneDone(out);
+  pruneLog(out);
+  return out;
+}
+
+function pruneDone(st) {
+  st.done.sort((a, b) => b.doneAt - a.doneAt);
+  if (st.done.length > 50) st.done.length = 50;
+}
+function pruneLog(st) {
+  st.log.sort((a, b) => b.at - a.at);
+  if (st.log.length > 100) st.log.length = 100;
+}
+const logKey = (e) => e.id + '|' + e.kind + '|' + e.at;
+
+const pack = (st) => ({ tasks: st.tasks, done: st.done, log: st.log, settings: st.settings, updatedAt: st.updatedAt });
+
+/* ===== 保存（1段目：この端末） ===== */
+function loadLocal() {
+  try {
+    const s = localStorage.getItem(STORE_KEY);
+    if (!s) return null;
+    const blob = JSON.parse(s);
+    if (!blob || blob.v !== 1) return null;
+    const st = normalize(blob.state);
+    if (!st) return null;
+    st.updatedAt = Number(blob.updatedAt) || st.updatedAt || 0;
+    everSynced = !!blob.everSynced;
+    return st;
+  } catch (e) { return null; }
+}
+function saveLocal() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({ v: 1, updatedAt: state.updatedAt, everSynced: everSynced, state: pack(state) }));
+  } catch (e) { /* 使えなくても画面は動かす */ }
+}
+
+/* 変更を確定する：時刻を刻んで、両方の保存先へ、描き直し */
+function commit() {
+  state.updatedAt = Date.now();
+  saveLocal();
+  scheduleCloud();
+  render();
+}
+
+/* ===== 保存（2段目：Claude アカウントの db） ===== */
+const cloud = { ok: false, ref: null, unsub: null, lastWritten: 0, timer: 0, busy: false, again: false };
+const isFatal = (e) => FATAL.indexOf(e && e.code) >= 0;
+
+function mergeFresh(local, remote) {
+  const out = normalize(clone(pack(remote)));
+  out.updatedAt = remote.updatedAt;
+  let changed = false;
+  const ids = new Set(out.tasks.map((t) => t.id));
+  local.tasks.forEach((t) => { if (!t.example && !ids.has(t.id)) { out.tasks.push(clone(t)); changed = true; } });
+  const dids = new Set(out.done.map((d) => d.id));
+  local.done.forEach((d) => { if (!d.example && !dids.has(d.id)) { out.done.push(clone(d)); changed = true; } });
+  pruneDone(out);
+  const lkeys = new Set(out.log.map(logKey));
+  local.log.forEach((e) => { if (!lkeys.has(logKey(e))) { out.log.push(clone(e)); changed = true; } });
+  pruneLog(out);
+  if (local.settings.onboarded && !out.settings.onboarded) { out.settings.onboarded = true; changed = true; }
+  if (local.settings.hintDone && !out.settings.hintDone) { out.settings.hintDone = true; changed = true; }
+  return { state: out, changed: changed };
+}
+
+function adopt(st) {
+  state = st;
+  cloud.lastWritten = Math.max(cloud.lastWritten, st.updatedAt);
+  saveLocal();
+  render();
+  refreshOpenSheet();
+}
+
+async function initCloud() {
+  const c = window.claude;
+  if (!c || typeof c.use !== 'function') return;
+  let db = null, user = null;
+  try { [db, user] = await Promise.all([c.use('db'), c.use('user')]); } catch (e) { return; }
+  if (!db || !user) return;
+  let uid = null;
+  try { uid = await user.id(); } catch (e) { uid = null; }
+  if (!uid) return;
+  let ref;
+  try { ref = db.doc('data/users/' + uid + '/state'); } catch (e) { return; }
+  let snap;
+  try { snap = await ref.get(); } catch (e) {
+    if (isFatal(e)) return;
+    try { await wait(800 + Math.random() * 800); snap = await ref.get(); } catch (e2) { return; }
+  }
+  cloud.ref = ref;
+  cloud.ok = true;
+  const body = snap && snap.exists ? snap.data() : null;
+  const remote = body && typeof body.updatedAt === 'number' ? normalize(body.state) : null;
+  if (remote) {
+    remote.updatedAt = body.updatedAt;
+    if (!everSynced) {
+      const m = mergeFresh(state, remote);
+      everSynced = true;
+      if (m.changed) { state = m.state; state.updatedAt = Date.now(); saveLocal(); render(); refreshOpenSheet(); scheduleCloud(0); }
+      else adopt(m.state);
+    } else if (remote.updatedAt > state.updatedAt) {
+      adopt(remote);
+    } else if (state.updatedAt > remote.updatedAt) {
+      scheduleCloud(0);
+    } else {
+      cloud.lastWritten = remote.updatedAt;
+    }
+  } else {
+    everSynced = true;
+    saveLocal();
+    if (state.updatedAt > 0) scheduleCloud(0);
+  }
+  updateStoreLabel();
+  try {
+    cloud.unsub = ref.onSnapshot((s) => {
+      if (!cloud.ok || !s || !s.exists || (s.metadata && s.metadata.hasPendingWrites)) return;
+      const b = s.data();
+      if (!b || typeof b.updatedAt !== 'number' || b.updatedAt <= state.updatedAt) return;
+      const st = normalize(b.state);
+      if (!st) return;
+      st.updatedAt = b.updatedAt;
+      adopt(st);
+    }, () => { cloud.unsub = null; });
+  } catch (e) { cloud.unsub = null; }
+}
+
+function scheduleCloud(delay) {
+  if (!cloud.ok) return;
+  clearTimeout(cloud.timer);
+  cloud.timer = setTimeout(flushCloud, delay == null ? 800 : delay);
+}
+
+async function writeOnce(body) {
+  await cloud.ref.set(body);
+  cloud.lastWritten = Math.max(cloud.lastWritten, body.updatedAt);
+}
+
+async function flushCloud() {
+  if (!cloud.ok || !cloud.ref) return;
+  if (cloud.busy) { cloud.again = true; return; }
+  if (state.updatedAt <= cloud.lastWritten) return;
+  cloud.busy = true;
+  const body = { v: 1, updatedAt: state.updatedAt, state: clone(pack(state)) };
+  try {
+    await writeOnce(body);
+  } catch (e) {
+    if (isFatal(e)) giveUpCloud();
+    else {
+      await wait(1200 + Math.random() * 1200);
+      try { await writeOnce(body); } catch (e2) { if (isFatal(e2)) giveUpCloud(); }
+    }
+  }
+  cloud.busy = false;
+  if (cloud.again) { cloud.again = false; flushCloud(); }
+}
+
+function giveUpCloud() {
+  cloud.ok = false;
+  clearTimeout(cloud.timer);
+  if (cloud.unsub) { try { cloud.unsub(); } catch (e) { /* 止まっていればよい */ } cloud.unsub = null; }
+  updateStoreLabel();
+}
+
+function updateStoreLabel() {
+  $('set-store').textContent = cloud.ok
+    ? '保存先：あなたの Claude アカウント（PC とスマホで同じ風船）'
+    : '保存先：この端末のブラウザ';
+}
+
+/* ===== 場の寸法 ===== */
+const stage = $('stage'), layer = $('layer'), bandEl = $('band');
+let W = 360, H = 600, BAND = 168, R0 = 33;
+let hintVisible = false, exVisible = false;
+
+function measure() {
+  W = stage.clientWidth || W;
+  H = stage.clientHeight || H;
+  BAND = Math.round(clamp(window.innerHeight * 0.2, 104, 210));
+  BAND = Math.min(BAND, Math.max(96, Math.round(H * 0.34)));
+  document.documentElement.style.setProperty('--band-h', BAND + 'px');
+  R0 = clamp(Math.min(window.innerWidth, window.innerHeight) * 0.085, 30, 44);
+}
+
+const heldDays = (t, n) => Math.max(0, (n - t.heldSince) / DAY);
+const passedDays = (t, n) => Math.max(0, (n - (t.passedAt || t.heldSince)) / DAY);
+/* 相手待ちの時計：渡したとき（一声かけたら、そのとき）から */
+const waitDays = (t, n) => Math.max(0, (n - (t.nudgedAt || t.passedAt || t.heldSince)) / DAY);
+const GROW = 1.2;                  // 1日で直径が2割ずつ大きくなる（前の日の1.2倍。だんだん速くふくらむ）
+const FULL_DAYS = 3, DANGER_DAYS = 5;  // 3日で「パンパン」、5日で「やばい」
+/* いちばん大きくなれる半径：画面に入りきらなくなるまで（直径が長い辺の1.3倍で止める。そこから先は見た目が変わらない） */
+function maxR() { return Math.max(R0, Math.max(W, H) * 0.65); }
+/* 相手待ちは1日6%ずつ、雲の帯に収まる1.1倍まで、ゆっくりふくらむ（自分のボールよりずっと遅い） */
+const radiusOf = (t, n) => (t.status === 'passed'
+  ? R0 * Math.min(0.72 * Math.pow(1.06, waitDays(t, n)), 1.1)
+  : Math.min(R0 * Math.pow(GROW, heldDays(t, n)), maxR()));
+const stringLen = (r) => clamp(r * 0.5, 14, 28);
+const below = (r) => r * 1.44 + stringLen(r) + 22;   // 風船の中心から日数バッジの下まで（本体は幅の1.27倍の高さ・結び目つき）
+const dayText = (d) => (d < 1 ? '今日' : Math.floor(d) + '日');
+
+/* 中心が動ける範囲（status ごと） */
+function regionOf(status, r) {
+  if (status === 'passed') {
+    const y0 = 30 + r * 1.1;
+    return { x0: 16 + r, x1: W - 16 - r, y0: y0, y1: Math.max(y0, BAND - below(r) + 14) };
+  }
+  let x0 = 16 + r, x1 = W - 16 - r;
+  if (x0 > x1) x0 = x1 = W / 2;                    // 横に入りきらない風船は真ん中に
+  let y0 = BAND + 14 + r * 1.1 + (exVisible ? 30 : 0);
+  let y1 = H - (hintVisible ? 34 : 10) - below(r);
+  if (y0 > y1) y0 = y1 = (y0 + y1) / 2;            // 縦に入りきらない風船は、上下にはみ出させる
+  return { x0: x0, x1: x1, y0: y0, y1: y1 };
+}
+const slotRegion = (status) => regionOf(status, status === 'passed' ? R0 * 0.72 : R0 * 1.35);
+
+function hash(s, k) {
+  let h = 2166136261 ^ k;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return ((h >>> 0) % 10007) / 10007;
+}
+
+/* 数に応じた、ゆらぎつきの格子 */
+function slotsFor(list, reg) {
+  const n = list.length, out = [];
+  if (!n) return out;
+  const w = Math.max(1, reg.x1 - reg.x0), h = Math.max(1, reg.y1 - reg.y0);
+  const cols = clamp(Math.ceil(Math.sqrt(n * (w / h))), 1, n);
+  const rows = Math.ceil(n / cols);
+  list.forEach((t, i) => {
+    const row = Math.floor(i / cols), col = i % cols;
+    const inRow = row === rows - 1 ? n - cols * (rows - 1) : cols;
+    const cw = w / inRow, ch = h / rows;
+    let x = reg.x0 + (col + 0.5) * cw + (inRow > 1 ? (row % 2 ? 0.14 : -0.14) * cw : 0);
+    let y = rows === 1 ? reg.y0 + h * 0.4 : reg.y0 + (row + 0.5) * ch;
+    x += (hash(t.id, 7) - 0.5) * cw * 0.3;
+    y += (hash(t.id, 8) - 0.5) * Math.min(ch, 120) * 0.35;
+    out.push({ x: clamp(x, reg.x0, reg.x1), y: clamp(y, reg.y0, reg.y1) });
+  });
+  return out;
+}
+
+/* ===== 風船 ===== */
+const bodies = new Map();
+const spawnIds = new Set();
+const STRING_SVG = '<svg class="b-string" viewBox="0 0 12 40" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M6 0 C 1 10, 11 20, 6 30 S 4 37, 6 40" fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>';
+
+function createBody(t) {
+  const el = document.createElement('button');
+  el.type = 'button';
+  el.className = 'balloon';
+  el.dataset.id = t.id;
+  el.innerHTML = '<span class="b-wrap" aria-hidden="true"><span class="b-glow"><span class="b-body"><span class="b-text"></span></span></span>' + STRING_SVG + '<span class="b-badge"></span></span>';
+  el.style.setProperty('--sway', (3 + hash(t.id, 3) * 1.8).toFixed(2) + 's');
+  el.style.setProperty('--delay', (-hash(t.id, 4) * 3).toFixed(2) + 's');
+  el.addEventListener('pointerdown', onDown);
+  el.addEventListener('click', onClick);
+  el.addEventListener('contextmenu', (e) => e.preventDefault());
+  layer.appendChild(el);
+  return {
+    id: t.id, el: el, status: t.status, x: 0, y: 0, vx: 0, vy: 0, ax: 0, ay: 0, r: 0, hx: 0, hy: 0,
+    p1: hash(t.id, 1) * 6.283, p2: hash(t.id, 2) * 6.283,
+    w1: 6.283 / (3.4 + hash(t.id, 5) * 1.6), w2: 6.283 / (5 + hash(t.id, 6) * 2.5),
+    drag: false, popping: false, placed: false, free: false,
+    txt: null, badge: null, cls: ''
+  };
+}
+
+function decorate(b, t, n) {
+  const el = b.el, g = GENRES[t.genre];
+  const passed = t.status === 'passed';
+  if (b.status !== t.status) { b.status = t.status; b.free = true; }
+  const d = passed ? passedDays(t, n) : heldDays(t, n);
+  const full = !passed && d >= FULL_DAYS, danger = !passed && d >= DANGER_DAYS, nudge = passed && waitDays(t, n) >= 3;
+  el.classList.toggle('is-wait', nudge);
+  el.style.setProperty('--g', 'var(' + g.v + ')');
+  el.style.setProperty('--gb', 'var(' + g.v.replace('--g-', '--gb-') + ')');   // 風船の本体は淡い色
+  el.classList.toggle('is-passed', passed);
+  el.classList.toggle('is-full', full && !danger);
+  el.classList.toggle('is-danger', danger);
+  const key = t.text + '|' + (t.example ? 1 : 0);
+  if (b.txt !== key) {
+    b.txt = key;
+    el.querySelector('.b-text').textContent = t.text;
+    const old = el.querySelector('.b-ex');
+    if (old) old.remove();
+    if (t.example) {
+      const ex = document.createElement('span');
+      ex.className = 'b-ex';
+      ex.textContent = '例';
+      el.querySelector('.b-glow').appendChild(ex);   // 型で切り抜かれない外側に置く
+    }
+  }
+  const badge = danger ? 'やばい' : full ? 'パンパン' : nudge ? '一声かける？' : dayText(d);
+  const bcls = full ? 'b-badge is-full' : nudge ? 'b-badge is-nudge' : 'b-badge';
+  if (b.badge !== badge || b.cls !== bcls) {
+    b.badge = badge; b.cls = bcls;
+    const be = el.querySelector('.b-badge');
+    be.textContent = badge;
+    be.className = bcls;
+  }
+  const when = passed ? '相手待ち' + (d < 1 ? '、今日渡した' : Math.floor(d) + '日') : dayText(d);
+  el.setAttribute('aria-label', g.label + '、' + t.text + '、' + when + (danger ? '、やばい' : full ? '、パンパン' : '') + (nudge ? '、一声かける？' : '') + (t.example ? '、例の風船' : ''));
+  const r = radiusOf(t, n);
+  if (Math.abs(r - b.r) > 0.2) {
+    b.r = r;
+    el.style.setProperty('--r', r.toFixed(1) + 'px');
+    el.style.setProperty('--ls', stringLen(r).toFixed(1) + 'px');  }
+}
+
+function syncBalloons(n) {
+  const seen = new Set();
+  state.tasks.forEach((t) => {
+    seen.add(t.id);
+    let b = bodies.get(t.id);
+    if (b && b.popping) b = null;
+    if (!b) { b = createBody(t); bodies.set(t.id, b); }
+    decorate(b, t, n);
+  });
+  bodies.forEach((b, id) => { if (!seen.has(id) && !b.popping) removeBody(b); });
+  /* 古い風船ほど前（自分のボールだけ。相手待ちはいちばん後ろ） */
+  const mine = state.tasks.filter((t) => t.status === 'mine').sort((a, b) => a.heldSince - b.heldSince);
+  mine.forEach((t, i) => { const b = bodies.get(t.id); if (b && !b.popping) b.el.style.setProperty('--z', String(10 + mine.length - i)); });
+  state.tasks.forEach((t) => { if (t.status === 'passed') { const b = bodies.get(t.id); if (b && !b.popping) b.el.style.setProperty('--z', '1'); } });
+}
+
+function layoutHomes() {
+  const mine = state.tasks.filter((t) => t.status === 'mine').sort((a, b) => a.heldSince - b.heldSince);
+  const passed = state.tasks.filter((t) => t.status === 'passed').sort((a, b) => (a.passedAt || 0) - (b.passedAt || 0));
+  placeGroup(mine, slotRegion('mine'));
+  placeGroup(passed, slotRegion('passed'));
+}
+function placeGroup(list, reg) {
+  const s = slotsFor(list, reg);
+  list.forEach((t, i) => {
+    const b = bodies.get(t.id);
+    if (!b || b.popping) return;
+    if (t.pos) { b.hx = reg.x0 + t.pos.x * (reg.x1 - reg.x0); b.hy = reg.y0 + t.pos.y * (reg.y1 - reg.y0); }
+    else { b.hx = s[i].x; b.hy = s[i].y; }
+    if (!b.placed) {
+      b.placed = true;
+      b.x = b.hx;
+      b.y = b.hy;
+      if (spawnIds.has(t.id) && motionOK()) { b.y = H + b.r * 1.1; b.free = true; }
+      spawnIds.delete(t.id);
+      b.vx = 0; b.vy = 0;
+      apply(b);
+    }
+  });
+}
+
+function apply(b) {
+  b.el.style.transform = 'translate3d(' + (b.x - b.r).toFixed(1) + 'px,' + (b.y - b.r * 1.1).toFixed(1) + 'px,0)';
+}
+function placeStatic() {
+  bodies.forEach((b) => { if (!b.drag && !b.popping && b.placed) { b.x = b.hx; b.y = b.hy; b.vx = 0; b.vy = 0; apply(b); } });
+}
+
+function removeBody(b) {
+  b.popping = true;
+  const done = () => { b.el.remove(); if (bodies.get(b.id) === b) bodies.delete(b.id); };
+  if (motionOK() && b.el.animate) {
+    b.el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: 'forwards' }).onfinish = done;
+  } else done();
+}
+
+/* ===== ぷかぷか（ばね＋ゆれ＋反発＋端の押し返し） ===== */
+let raf = 0, lastT = 0;
+function startLoop() {
+  if (raf || !motionOK() || document.hidden) return;
+  lastT = performance.now();
+  raf = requestAnimationFrame(step);
+}
+function stopLoop() { if (raf) cancelAnimationFrame(raf); raf = 0; }
+
+function step(ts) {
+  raf = 0;
+  const dt = Math.min(0.033, Math.max(0.001, (ts - lastT) / 1000));
+  lastT = ts;
+  const sec = ts / 1000;
+  const list = [];
+  bodies.forEach((b) => { if (!b.popping && b.placed) list.push(b); });
+  for (const b of list) {
+    if (b.drag) continue;
+    const tx = b.hx + Math.sin(sec * b.w2 + b.p2) * 3;
+    const ty = b.hy + Math.sin(sec * b.w1 + b.p1) * Math.min(3 + b.r * 0.08, 8);
+    b.ax = (tx - b.x) * 7 - b.vx * 3.2;
+    b.ay = (ty - b.y) * 7 - b.vy * 3.2;
+  }
+  for (let i = 0; i < list.length; i++) {
+    for (let j = i + 1; j < list.length; j++) {
+      const a = list[i], c = list[j];
+      const dx = c.x - a.x, dy = c.y - a.y, min = a.r + c.r + 6, d2 = dx * dx + dy * dy;
+      if (d2 >= min * min) continue;
+      const d = Math.sqrt(d2) || 0.01, push = (min - d) * 60, nx = dx / d, ny = dy / d;
+      if (!a.drag) { a.ax -= nx * push; a.ay -= ny * push; }
+      if (!c.drag) { c.ax += nx * push; c.ay += ny * push; }
+    }
+  }
+  for (const b of list) {
+    if (b.drag) continue;
+    const reg = regionOf(b.status, b.r);
+    if (b.free) {
+      if (b.x >= reg.x0 - 2 && b.x <= reg.x1 + 2 && b.y >= reg.y0 - 2 && b.y <= reg.y1 + 2) b.free = false;
+    } else {
+      if (b.x < reg.x0) b.ax += (reg.x0 - b.x) * 50; else if (b.x > reg.x1) b.ax += (reg.x1 - b.x) * 50;
+      if (b.y < reg.y0) b.ay += (reg.y0 - b.y) * 50; else if (b.y > reg.y1) b.ay += (reg.y1 - b.y) * 50;
+    }
+    b.vx += b.ax * dt; b.vy += b.ay * dt;
+    const sp = Math.hypot(b.vx, b.vy);
+    if (sp > 1600) { b.vx *= 1600 / sp; b.vy *= 1600 / sp; }
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    if (!b.free) {   // 自分の場所からは出さない（大きい風船どうしが押し合っても、画面の外や文字の上へ行かない）
+      const m = 6;
+      if (b.x < reg.x0 - m) { b.x = reg.x0 - m; if (b.vx < 0) b.vx = 0; } else if (b.x > reg.x1 + m) { b.x = reg.x1 + m; if (b.vx > 0) b.vx = 0; }
+      if (b.y < reg.y0 - m) { b.y = reg.y0 - m; if (b.vy < 0) b.vy = 0; } else if (b.y > reg.y1 + m) { b.y = reg.y1 + m; if (b.vy > 0) b.vy = 0; }
+    }
+    apply(b);
+  }
+  raf = requestAnimationFrame(step);
+}
+
+/* ===== さわる（タップ・ダブルタップ・ドラッグ・はじく） ===== */
+let press = null, tap = null, lastDownAt = 0;
+function toStage(e) { const r = stage.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+const getTask = (id) => state.tasks.find((t) => t.id === id);
+
+function onDown(e) {
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  const id = e.currentTarget.dataset.id, b = bodies.get(id);
+  if (!b || b.popping || press) return;
+  lastDownAt = performance.now();
+  try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) { /* 取れなくても window で拾う */ }
+  const p = toStage(e), t0 = performance.now();
+  press = { id: id, pid: e.pointerId, sx: p.x, sy: p.y, ox: p.x - b.x, oy: p.y - b.y, drag: false, second: false, samples: [{ x: p.x, y: p.y, t: t0 }] };
+  if (tap && tap.id === id && t0 - tap.t <= 300 && Math.hypot(p.x - tap.x, p.y - tap.y) <= 30) {
+    press.second = true;
+    clearTimeout(tap.timer);
+    tap = null;
+  } else if (tap && tap.id !== id) {
+    clearTimeout(tap.timer);
+    tap = null;
+  }
+}
+
+function onMove(e) {
+  if (!press || e.pointerId !== press.pid) return;
+  const b = bodies.get(press.id);
+  if (!b || b.popping) { press = null; return; }
+  const p = toStage(e), t = performance.now();
+  if (!press.drag && Math.hypot(p.x - press.sx, p.y - press.sy) >= 8) {
+    press.drag = true;
+    press.second = false;
+    b.drag = true;
+    b.el.classList.add('is-dragging');
+    if (tap) { clearTimeout(tap.timer); tap = null; }
+  }
+  if (!press.drag) return;
+  e.preventDefault();
+  b.x = p.x - press.ox; b.y = p.y - press.oy; b.vx = 0; b.vy = 0;
+  apply(b);
+  press.samples.push({ x: p.x, y: p.y, t: t });
+  while (press.samples.length > 2 && t - press.samples[0].t > 120) press.samples.shift();
+  dragFeedback(b);
+}
+
+function onUp(e) {
+  if (!press || e.pointerId !== press.pid) return;
+  const pr = press;
+  press = null;
+  const b = bodies.get(pr.id);
+  if (!b || b.popping) return;
+  const p = toStage(e), t = performance.now();
+  if (pr.drag) {
+    pr.samples.push({ x: p.x, y: p.y, t: t });
+    b.drag = false;
+    b.el.classList.remove('is-dragging');
+    endDragFeedback();
+    handleDrop(b, releaseVy(pr.samples));
+    return;
+  }
+  if (pr.second) { popTask(pr.id); return; }
+  tap = { id: pr.id, t: t, x: p.x, y: p.y, timer: setTimeout(() => { tap = null; openDetail(pr.id); }, 260) };
+}
+
+function onCancel(e) {
+  if (!press || e.pointerId !== press.pid) return;
+  const b = bodies.get(press.id);
+  press = null;
+  if (b) { b.drag = false; b.el.classList.remove('is-dragging'); }
+  endDragFeedback();
+  if (!motionOK()) placeStatic();
+}
+
+function onClick(e) {
+  e.preventDefault();
+  if (performance.now() - lastDownAt < 700) return;   // 指やマウスは pointer 側で扱う
+  openDetail(e.currentTarget.dataset.id);              // キーボード（Enter／Space）や読み上げからの操作
+}
+
+function releaseVy(s) {
+  const last = s[s.length - 1];
+  let first = s[0];
+  for (const q of s) { if (last.t - q.t <= 100) { first = q; break; } }
+  const dtm = last.t - first.t;
+  return dtm > 8 ? (last.y - first.y) / dtm : 0;
+}
+
+function toPos(status, x, y) {
+  const reg = slotRegion(status);
+  return normPos({ x: (x - reg.x0) / Math.max(1, reg.x1 - reg.x0), y: (y - reg.y0) / Math.max(1, reg.y1 - reg.y0) });
+}
+
+function handleDrop(b, vy) {
+  const t = getTask(b.id);
+  if (!t) return;
+  if (t.status === 'mine') {
+    const inBand = b.y < BAND + b.r * 0.2;
+    if (inBand || vy <= -0.8) {
+      if (!inBand) { b.vy = Math.max(-1600, vy * 1000); b.vx = 0; }
+      passTask(t.id, inBand ? toPos('passed', b.x, b.y) : null);
+      return;
+    }
+    t.pos = toPos('mine', b.x, b.y);
+    b.free = true;   // 場所の外で離しても、跳ばずにすべって戻る
+    commit();
+    return;
+  }
+  if (b.y > BAND + 10) { returnTask(t.id, toPos('mine', b.x, b.y)); return; }
+  t.pos = toPos('passed', b.x, b.y);
+  b.free = true;
+  commit();
+}
+
+function dragFeedback(b) {
+  const t = getTask(b.id);
+  if (!t) return;
+  if (t.status === 'mine') {
+    const over = b.y < BAND + b.r * 0.2;
+    bandEl.classList.toggle('is-over', over);
+    $('band-label').textContent = over ? 'ここで離すと渡す' : '上の雲へ動かすと渡す';
+  } else {
+    $('drop-tip').hidden = !(b.y > BAND + 10);
+  }
+}
+function endDragFeedback() {
+  bandEl.classList.remove('is-over');
+  $('band-label').textContent = '相手待ち（ゆっくりふくらむ）';
+  $('drop-tip').hidden = true;
+}
+
+/* ===== 割れる ===== */
+function popAnim(b) {
+  b.popping = true;
+  const el = b.el, x = b.x, y = b.y, r = b.r;
+  const g = el.style.getPropertyValue('--gb');   // 破片は風船と同じ淡い色
+  const finish = () => { el.remove(); if (bodies.get(b.id) === b) bodies.delete(b.id); };
+  const big = Math.min(4, Math.sqrt(Math.max(1, r / R0)));   // 大きい風船ほど、破片も「ぱん！」も大きく
+  showPan(x, y - r * 0.2, big);
+  if (!motionOK() || !el.animate) { finish(); return; }
+  const grow = el.querySelector('.b-body').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.18)' }], { duration: 120, easing: 'ease-out', fill: 'forwards' });
+  grow.onfinish = () => {
+    el.style.visibility = 'hidden';
+    const cnt = Math.round(12 * big);
+    for (let i = 0; i < cnt; i++) {
+      const s = document.createElement('span');
+      s.className = 'shard';
+      s.style.setProperty('--g', g);
+      layer.appendChild(s);
+      const a = (i / cnt) * Math.PI * 2 + Math.random() * 0.5;
+      const dist = r * (1.1 + Math.random() * 0.9);
+      const rot = Math.round(Math.random() * 360 - 180);
+      const from = 'translate(' + (x - 5) + 'px,' + (y - 3) + 'px)';
+      const to = 'translate(' + (x - 5 + Math.cos(a) * dist).toFixed(1) + 'px,' + (y - 3 + Math.sin(a) * dist + 18).toFixed(1) + 'px)';
+      s.animate([
+        { transform: from + ' rotate(0deg) scale(' + big.toFixed(2) + ')', opacity: 1 },
+        { transform: to + ' rotate(' + rot + 'deg) scale(' + (0.6 * big).toFixed(2) + ')', opacity: 0 }
+      ], { duration: 520 + Math.random() * 180, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'forwards' }).onfinish = () => s.remove();
+    }
+    finish();
+  };
+}
+
+function showPan(x, y, big) {
+  const p = document.createElement('p');
+  p.className = 'pan';
+  p.textContent = 'ぱん！';
+  p.setAttribute('aria-hidden', 'true');
+  if (big > 1) p.style.fontSize = Math.round(30 * Math.min(2.4, big)) + 'px';
+  layer.appendChild(p);
+  const base = 'translate(' + (x - p.offsetWidth / 2).toFixed(1) + 'px,' + (y - p.offsetHeight / 2).toFixed(1) + 'px)';
+  if (!motionOK() || !p.animate) { p.style.transform = base; setTimeout(() => p.remove(), 700); return; }
+  p.animate([
+    { transform: base + ' scale(.5)', opacity: 0 },
+    { transform: base + ' scale(1.15)', opacity: 1, offset: 0.25 },
+    { transform: base + ' translateY(-14px) scale(1)', opacity: 1, offset: 0.7 },
+    { transform: base + ' translateY(-24px) scale(1)', opacity: 0 }
+  ], { duration: 820, easing: 'ease-out', fill: 'forwards' }).onfinish = () => p.remove();
+}
+
+/* ===== タスクの操作 ===== */
+function addTask(text, genre) {
+  const n = now();
+  const t = { id: newId(), text: text.slice(0, 30), genre: GENRES[genre] ? genre : 'other', createdAt: n, heldSince: n, status: 'mine', passedAt: null };
+  state.tasks.push(t);
+  state.settings.lastGenre = t.genre;
+  spawnIds.add(t.id);
+  commit();
+  return t;
+}
+function restoreTask(prev, index) {
+  const i = state.tasks.findIndex((t) => t.id === prev.id);
+  if (i >= 0) state.tasks[i] = prev;
+  else state.tasks.splice(Math.min(index == null ? state.tasks.length : index, state.tasks.length), 0, prev);
+  commit();
+}
+function passTask(id, pos) {
+  const t = getTask(id);
+  if (!t || t.status === 'passed') return;
+  const prev = clone(t);
+  const le = t.example ? null : addLog(t, 'pass');
+  t.status = 'passed';
+  t.passedAt = now();
+  delete t.nudgedAt;
+  if (pos) t.pos = pos; else delete t.pos;
+  state.settings.hintDone = true;
+  commit();
+  toast('渡した。ここからはゆっくりふくらむよ', { onAction: () => { dropLog(le); restoreTask(prev); } });
+}
+/* 自分のボールを手放した（渡した・割った）ときに、何日持っていたかを残す */
+function addLog(t, kind) {
+  const n = now();
+  const e = { id: t.id, kind: kind, genre: t.genre, heldMs: Math.max(0, n - t.heldSince), at: n };
+  state.log.unshift(e);
+  pruneLog(state);
+  return e;
+}
+function dropLog(e) {
+  if (!e) return;
+  const k = logKey(e);
+  state.log = state.log.filter((x) => logKey(x) !== k);
+}
+function returnTask(id, pos) {
+  const t = getTask(id);
+  if (!t || t.status !== 'passed') return;
+  t.status = 'mine';
+  t.heldSince = now();
+  t.passedAt = null;
+  delete t.nudgedAt;
+  if (pos) t.pos = pos; else delete t.pos;
+  commit();
+  toast('自分のボールに戻ったよ');
+}
+/* 相手待ちに一声かけた：待ちの時計を戻す（ゆれ・光・ふくらみが落ち着く） */
+function nudgeTask(id) {
+  const t = getTask(id);
+  if (!t || t.status !== 'passed') return;
+  const prev = clone(t);
+  t.nudgedAt = now();
+  commit();
+  toast('一声かけたね。待ちの時計を戻したよ', { onAction: () => restoreTask(prev) });
+}
+function popTask(id) {
+  const i = state.tasks.findIndex((t) => t.id === id);
+  if (i < 0) return;
+  const t = state.tasks[i], b = bodies.get(id);
+  const entry = { id: t.id, text: t.text, genre: t.genre, doneAt: now() };
+  if (t.example) entry.example = true;
+  let le = null;
+  if (t.status === 'passed') entry.fromPassed = true;
+  else if (!t.example) { le = addLog(t, 'pop'); entry.heldMs = le.heldMs; }
+  state.tasks.splice(i, 1);
+  state.done.unshift(entry);
+  pruneDone(state);
+  state.settings.hintDone = true;
+  if (b && !b.popping) popAnim(b);
+  playPop(radiusOf(t, now()) / R0);
+  commit();
+  vibrate(20);
+  toast('ぱん！ 1つ片づいた', { onAction: () => {
+    state.done = state.done.filter((d) => d.id !== entry.id);
+    dropLog(le);
+    restoreTask(t, i);
+  } });
+}
+function deleteTask(id) {
+  const i = state.tasks.findIndex((t) => t.id === id);
+  if (i < 0) return;
+  const t = state.tasks[i];
+  state.tasks.splice(i, 1);
+  commit();
+  toast('消したよ', { onAction: () => restoreTask(t, i) });
+}
+function clearExamples() {
+  const removed = state.tasks.map((t, i) => ({ t: t, i: i })).filter((x) => x.t.example);
+  if (!removed.length) return;
+  state.tasks = state.tasks.filter((t) => !t.example);
+  commit();
+  toast('例の風船を消したよ', { onAction: () => {
+    removed.forEach((x) => { if (!getTask(x.t.id)) state.tasks.splice(Math.min(x.i, state.tasks.length), 0, x.t); });
+    commit();
+  } });
+}
+
+/* ===== トースト ===== */
+let toastTimer = 0, toastFn = null;
+function toast(msg, opt) {
+  opt = opt || {};
+  $('toast-msg').textContent = msg;
+  toastFn = opt.onAction || null;
+  $('toast-action').hidden = !toastFn;
+  $('toast').classList.add('is-on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, opt.duration || (toastFn ? 5000 : 2400));
+  const live = $('sr-live');
+  live.textContent = '';
+  setTimeout(() => { live.textContent = msg; }, 40);
+}
+function hideToast() { $('toast').classList.remove('is-on'); toastFn = null; }
+
+/* ===== シート ===== */
+let sheetEl = null, sheetOpener = null;
+function openSheet(id, opt) {
+  opt = opt || {};
+  const el = $(id);
+  if (sheetEl && sheetEl !== el) closeSheet(true);
+  if (!sheetEl) sheetOpener = document.activeElement;
+  sheetEl = el;
+  el.dataset.lock = opt.lock ? '1' : '';
+  const scrim = $('scrim');
+  scrim.hidden = false;
+  scrim.classList.toggle('is-light', !!opt.light);
+  el.hidden = false;
+  el.scrollTop = 0;
+  $('app').inert = true;
+  $('bar').inert = true;
+  const f = opt.focus ? $(opt.focus) : el.querySelector('h2');
+  if (f) { try { f.focus({ preventScroll: true }); } catch (e) { f.focus(); } }
+}
+function closeSheet(swap) {
+  if (!sheetEl) return;
+  sheetEl.hidden = true;
+  sheetEl = null;
+  if (swap === true) return;
+  $('scrim').hidden = true;
+  $('app').inert = false;
+  $('bar').inert = false;
+  const o = sheetOpener;
+  sheetOpener = null;
+  if (o && o !== document.body && document.contains(o) && o.focus) { try { o.focus({ preventScroll: true }); } catch (e) { /* なくてよい */ } }
+}
+const isOpen = (id) => sheetEl === $(id);
+
+/* 2回押しの確かめ（ブラウザの確認ダイアログは出せないので画面の中で） */
+function armTwice(btn, armedText, onConfirm) {
+  if (btn.dataset.armed === '1') { clearTimeout(Number(btn.dataset.timer)); btn.dataset.armed = ''; onConfirm(); return; }
+  const orig = btn.textContent;
+  btn.dataset.armed = '1';
+  btn.textContent = armedText;
+  btn.classList.add('is-armed');
+  btn.dataset.timer = String(setTimeout(() => {
+    btn.dataset.armed = '';
+    btn.textContent = orig;
+    btn.classList.remove('is-armed');
+  }, 3000));
+}
+
+/* 日本語の変換中の Enter では送らない */
+function guardEnter(input, onEnter) {
+  let composing = false, endAt = 0;
+  input.addEventListener('compositionstart', () => { composing = true; });
+  input.addEventListener('compositionend', () => { composing = false; endAt = performance.now(); });
+  input.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    if (e.isComposing || composing || e.keyCode === 229 || performance.now() - endAt < 60) { e.preventDefault(); return; }
+    if (onEnter) { e.preventDefault(); onEnter(); }
+  });
+}
+
+/* ===== 追加 ===== */
+function updateCount(inputId, countId) { const c = $(countId); if (c) c.textContent = $(inputId).value.length + '/30'; }
+function openAdd(focusInput) {
+  const g = state.settings.lastGenre || 'research';
+  ($('add-g-' + g) || $('add-g-research')).checked = true;
+  $('add-err').hidden = true;
+  updateCount('add-text', 'add-count');
+  openSheet('sheet-add', { light: true, focus: focusInput ? 'add-text' : 'add-title' });
+}
+function submitAdd() {
+  const input = $('add-text'), text = input.value.trim();
+  if (!text) { $('add-err').hidden = false; input.focus(); return; }
+  $('add-err').hidden = true;
+  const r = document.querySelector('input[name="add-genre"]:checked');
+  addTask(text, r ? r.value : 'other');
+  input.value = '';
+  updateCount('add-text', 'add-count');
+  input.focus({ preventScroll: true });
+  toast('風船にしたよ');
+}
+
+/* ===== 詳細 ===== */
+let detail = { id: null, mode: 'view' };
+function openDetail(id) {
+  if (!getTask(id) || sheetEl) return;
+  detail = { id: id, mode: 'view' };
+  renderDetail();
+  openSheet('sheet-detail', { focus: 'detail-title' });
+}
+function genreRadios(name, current) {
+  return '<fieldset class="genres"><legend class="sr-only">ジャンル</legend>' + Object.keys(GENRES).map((k) =>
+    '<label class="genre" style="--g: var(' + GENRES[k].v + ')"><input type="radio" name="' + name + '" id="' + name + '-' + k + '" value="' + k + '"' + (k === current ? ' checked' : '') + '><span>' + GENRES[k].label + '</span></label>'
+  ).join('') + '</fieldset>';
+}
+function renderDetail() {
+  const el = $('sheet-detail'), t = getTask(detail.id);
+  if (!t) { if (isOpen('sheet-detail')) closeSheet(); return; }
+  const g = GENRES[t.genre], n = now(), passed = t.status === 'passed';
+  const d = passed ? passedDays(t, n) : heldDays(t, n);
+  const nd = t.nudgedAt ? Math.max(0, (n - t.nudgedAt) / DAY) : null;
+  const when = passed
+    ? (d < 1 ? '今日渡した' : '渡して' + Math.floor(d) + '日') + (nd == null ? '' : '（' + (nd < 1 ? '今日' : Math.floor(nd) + '日前に') + '一声かけた）')
+    : (d < 1 ? '今日から' : '持って' + Math.floor(d) + '日目');
+  const waiting = passed && waitDays(t, n) >= 3;
+  const head = '<div class="grabber" aria-hidden="true"></div><div class="sheet-head"><p class="meta" style="--g: var(' + g.v + ')"><span class="dot" aria-hidden="true"></span><span>' + esc(g.label + ' ・ ' + when) + '</span>' + (t.example ? '<span class="ex-tag">例</span>' : '') + '</p><button class="icon-btn" type="button" data-close aria-label="閉じる">×</button></div>';
+  if (detail.mode === 'edit') {
+    el.innerHTML = head + '<form id="edit-form" novalidate><h2 class="sr-only" id="detail-title" tabindex="-1">書き直す</h2>'
+      + '<div class="input-wrap"><label class="sr-only" for="edit-text">ひとこと</label><input class="field-input" id="edit-text" type="text" maxlength="30" autocomplete="off" value="' + esc(t.text) + '" aria-describedby="edit-err"><span class="char-count" id="edit-count" aria-hidden="true"></span></div>'
+      + '<p class="err" id="edit-err" hidden>ひとこと書いてね</p>'
+      + genreRadios('edit-g', t.genre)
+      + '<div class="row-btns wide-right"><button class="btn" type="button" data-act="edit-cancel">やめる</button><button class="btn btn-primary" type="submit">保存する</button></div></form>';
+    updateCount('edit-text', 'edit-count');
+    $('edit-text').addEventListener('input', () => { updateCount('edit-text', 'edit-count'); if ($('edit-text').value.trim()) $('edit-err').hidden = true; });
+    guardEnter($('edit-text'), saveEdit);
+    $('edit-form').addEventListener('submit', (e) => { e.preventDefault(); saveEdit(); });
+    return;
+  }
+  el.innerHTML = head + '<h2 class="detail-text" id="detail-title" tabindex="-1">' + esc(t.text) + '</h2>' + (passed
+    ? '<div class="actions"><button class="btn' + (waiting ? '' : ' btn-primary') + '" type="button" data-act="return">戻ってきた</button><button class="btn' + (waiting ? ' btn-primary' : '') + '" type="button" data-act="nudged">一声かけた</button><button class="btn" type="button" data-act="stuck">つまずいてる</button><button class="btn" type="button" data-act="pop">終わった（割る）</button></div>'
+      + '<div class="minor"><button class="link-btn danger" type="button" data-act="delete">消す</button></div>'
+    : '<div class="actions"><button class="btn btn-primary span2" type="button" data-act="pass">渡した（相手待ちへ）</button><button class="btn" type="button" data-act="stuck">つまずいてる</button><button class="btn" type="button" data-act="pop">終わった（割る）</button></div>'
+      + '<div class="minor"><button class="link-btn" type="button" data-act="edit">書き直す</button><button class="link-btn danger" type="button" data-act="delete">消す</button></div>');
+}
+function saveEdit() {
+  const t = getTask(detail.id);
+  if (!t) return;
+  const text = $('edit-text').value.trim();
+  if (!text) { $('edit-err').hidden = false; $('edit-text').focus(); return; }
+  const r = document.querySelector('input[name="edit-g"]:checked');
+  t.text = text.slice(0, 30);
+  if (r && GENRES[r.value]) t.genre = r.value;
+  commit();
+  detail.mode = 'view';
+  renderDetail();
+  $('detail-title').focus({ preventScroll: true });
+  toast('書き直したよ');
+}
+$('sheet-detail').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-act]');
+  if (!btn) return;
+  const id = detail.id, act = btn.dataset.act;
+  if (act === 'pass') { closeSheet(); passTask(id); }
+  else if (act === 'return') { closeSheet(); returnTask(id); }
+  else if (act === 'nudged') { closeSheet(); nudgeTask(id); }
+  else if (act === 'pop') { closeSheet(); setTimeout(() => popTask(id), 90); }
+  else if (act === 'stuck') openDiag(id);
+  else if (act === 'edit') { detail.mode = 'edit'; renderDetail(); $('edit-text').focus({ preventScroll: true }); }
+  else if (act === 'edit-cancel') { detail.mode = 'view'; renderDetail(); $('detail-title').focus({ preventScroll: true }); }
+  else if (act === 'delete') armTwice(btn, 'もう一度押すと消えます', () => { closeSheet(); deleteTask(id); });
+});
+
+/* ===== つまずき診断 ===== */
+let diag = { taskId: null, choice: 0, tab: 'reply', drafts: {} };
+function openDiag(taskId) {
+  diag = { taskId: taskId || null, choice: 0, tab: 'reply', drafts: {} };
+  renderDiag();
+  openSheet('sheet-diag', { focus: 'diag-title' });
+}
+const diagTask = () => (diag.taskId ? getTask(diag.taskId) || null : null);
+function taskChip(t) {
+  const g = GENRES[t.genre];
+  return '<p class="task-chip" style="--g: var(' + g.v + ')"><span class="dot" aria-hidden="true"></span><span>' + esc(g.label + '：' + t.text) + '</span></p>';
+}
+function renderDiag() {
+  const el = $('sheet-diag'), t = diagTask();
+  const close = '<button class="icon-btn" type="button" data-close aria-label="閉じる">×</button>';
+  if (!diag.choice) {
+    el.innerHTML = '<div class="grabber" aria-hidden="true"></div>' + (t ? taskChip(t) : '')
+      + '<div class="sheet-head"><h2 id="diag-title" tabindex="-1">どこで止まってる？</h2>' + close + '</div>'
+      + '<p class="sub">誰でもどこかで止まる。近いものを1つ選んでね</p>'
+      + '<ul class="opts">' + ANSWERS.map((a) => '<li><button class="opt" type="button" data-choice="' + a.key + '"><span class="opt-n" aria-hidden="true">' + a.key + '</span><span>' + esc(a.option) + '</span></button></li>').join('') + '</ul>'
+      + '<p class="motto">' + MOTTO + '</p>';
+    return;
+  }
+  const a = ANSWERS[diag.choice - 1];
+  const fill = (s) => (t ? s.split('〇〇').join('「' + t.text + '」') : s);
+  let body;
+  if (a.step) {
+    body = '<p class="lbl"><label for="step-text">一歩目</label></p>'
+      + '<input class="field-input no-count" id="step-text" type="text" maxlength="30" autocomplete="off" placeholder="15分でできる一歩" aria-describedby="step-err">'
+      + '<p class="err" id="step-err" hidden>ひとこと書いてね</p>'
+      + '<button class="btn btn-primary scene-btn" type="button" data-act="step">この一歩を風船にする</button>';
+  } else {
+    const cur = a.tabs ? (a.tabs.find((x) => x.key === diag.tab) || a.tabs[0]) : null;
+    const dk = cur ? cur.key : 'main';
+    const text = diag.drafts[dk] != null ? diag.drafts[dk] : fill(cur ? cur.tpl : a.tpl);
+    body = '<p class="lbl" id="tpl-lbl">文面の例</p>'
+      + (a.tabs ? '<div class="tabs" role="tablist" aria-label="文面の種類">' + a.tabs.map((x) => '<button class="tab" type="button" role="tab" id="tab-' + x.key + '" aria-selected="' + (x.key === cur.key) + '" aria-controls="ans-text" data-tab="' + x.key + '">' + x.label + '</button>').join('') + '</div>' : '')
+      + '<textarea class="tpl" id="ans-text" rows="4" aria-labelledby="tpl-lbl" data-draft="' + dk + '">' + esc(text) + '</textarea>'
+      + '<div class="tpl-row"><button class="btn btn-small" type="button" data-act="copy">コピー</button></div>';
+    if (t && a.btn === 'pass' && t.status === 'mine') body += '<button class="btn btn-primary scene-btn" type="button" data-act="sent">送ったら『渡した』にする</button>';
+    if (t && a.btn === 'return' && t.status === 'passed') body += '<button class="btn btn-primary scene-btn" type="button" data-act="to-mine">自分のボールに戻す</button>';
+  }
+  el.innerHTML = '<div class="grabber" aria-hidden="true"></div>'
+    + '<div class="sheet-head"><p class="ans-place">止まっている場所<b>' + a.place + '</b></p>' + close + '</div>'
+    + (t ? taskChip(t) : '')
+    + '<h2 class="ans-title" id="diag-title" tabindex="-1">' + esc(a.title) + '</h2>'
+    + '<p class="lbl">なぜ</p><p class="ans-why">' + esc(a.why) + '</p>'
+    + '<p class="lbl">今すぐやる一手</p><p class="ans-move">' + esc(a.move) + '</p>'
+    + body
+    + '<p class="ans-research"><b>研究では</b>' + esc(a.research) + '</p>'
+    + '<div class="row-btns"><button class="btn" type="button" data-act="others">ほかの答えを見る</button><button class="btn" type="button" data-close>閉じる</button></div>'
+    + '<p class="motto">' + MOTTO + '</p>';
+  if (a.step) guardEnter($('step-text'), makeStep);
+}
+function makeStep() {
+  const input = $('step-text'), text = input.value.trim();
+  if (!text) { $('step-err').hidden = false; input.focus(); return; }
+  const t = diagTask();
+  addTask(text, t ? t.genre : state.settings.lastGenre);
+  closeSheet();
+  toast('一歩目を風船にしたよ');
+}
+function copyText() {
+  const ta = $('ans-text');
+  if (!ta) return;
+  const fail = () => {
+    ta.focus();
+    ta.select();
+    try { ta.setSelectionRange(0, ta.value.length); } catch (e) { /* 選べたところまで */ }
+    toast('コピーできなかったので、文面を長押しして選んでね');
+  };
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(ta.value).then(() => toast('コピーしたよ'), fail);
+    else fail();
+  } catch (e) { fail(); }
+}
+$('sheet-diag').addEventListener('click', (e) => {
+  const opt = e.target.closest('[data-choice]');
+  if (opt) { diag.choice = Number(opt.dataset.choice); renderDiag(); $('sheet-diag').scrollTop = 0; $('diag-title').focus({ preventScroll: true }); return; }
+  const tab = e.target.closest('[data-tab]');
+  if (tab) { diag.tab = tab.dataset.tab; renderDiag(); $('tab-' + diag.tab).focus({ preventScroll: true }); return; }
+  const btn = e.target.closest('[data-act]');
+  if (!btn) return;
+  const act = btn.dataset.act, t = diagTask();
+  if (act === 'copy') copyText();
+  else if (act === 'step') makeStep();
+  else if (act === 'others') { diag.choice = 0; renderDiag(); $('sheet-diag').scrollTop = 0; $('diag-title').focus({ preventScroll: true }); }
+  else if (act === 'sent' && t) { closeSheet(); passTask(t.id); }
+  else if (act === 'to-mine' && t) { closeSheet(); returnTask(t.id); }
+});
+$('sheet-diag').addEventListener('input', (e) => {
+  if (e.target.id === 'ans-text') diag.drafts[e.target.dataset.draft] = e.target.value;
+  if (e.target.id === 'step-text' && e.target.value.trim()) $('step-err').hidden = true;
+});
+
+/* ===== 設定 ===== */
+function renderSettings() {
+  $('set-openadd').checked = !!state.settings.openAddOnLaunch;
+  $('set-sound').checked = state.settings.sound !== false;
+  const days = Math.round((state.settings.timeOffsetMs || 0) / DAY);
+  $('time-now').textContent = days ? 'いま ' + days + '日 進めている' : 'いまは進めていない';
+  $('set-ex-row').hidden = !state.tasks.some((t) => t.example);
+  updateStoreLabel();
+}
+function shiftTime(ms) {
+  state.settings.timeOffsetMs = ms == null ? 0 : (state.settings.timeOffsetMs || 0) + ms;
+  commit();
+}
+
+/* ===== 初回の説明 ===== */
+const ONB = [
+  { t: 'タスクは風船。', b: '自分が持っているタスクは、持っている日数でふくらんでいく。3日でパンパン、5日でやばい。' },
+  { t: '渡したら、上の雲へ。', b: '途中を見せた、質問を送った、返事をした。相手に渡したら、ふくらむのはゆっくりになる。3日たってゆれ出したら、一声かけよう。' },
+  { t: '終わったら、ダブルタップで割る。', b: '止まったら『つまずいた』を押す。どこで止まっているかと、次の一手を出すよ。' }
+];
+let onbStep = 0;
+function mini(gv, r, x, y, badge, extra) {
+  return '<span class="balloon ' + (extra || '') + '" style="--r:' + r + 'px;--g:var(' + gv + ');--gb:var(' + gv.replace('--g-', '--gb-') + ');--ls:' + Math.round(r * 0.7) + 'px;transform:translate(' + (x - r).toFixed(1) + 'px,' + (y - r * 1.1).toFixed(1) + 'px)">'
+    + '<span class="b-wrap"><span class="b-glow"><span class="b-body"></span></span>' + STRING_SVG
+    + (badge ? '<span class="' + (extra === 'is-full' ? 'b-badge is-full' : 'b-badge') + '">' + badge + '</span>' : '') + '</span></span>';
+}
+function artFor(i, w) {
+  if (i === 0) return mini('--g-research', 12, w * 0.2, 40, '今日') + mini('--g-research', 17, w * 0.5, 40, '2日') + mini('--g-research', 23, w * 0.8, 38, 'パンパン', 'is-full');
+  if (i === 1) {
+    return '<span class="mini-cloud" style="background: radial-gradient(circle at 8% 45%, var(--cloud) 20px, transparent 21px), radial-gradient(circle at 28% 62%, var(--cloud) 24px, transparent 25px), radial-gradient(circle at 50% 44%, var(--cloud) 20px, transparent 21px), radial-gradient(circle at 72% 62%, var(--cloud) 25px, transparent 26px), radial-gradient(circle at 93% 46%, var(--cloud) 21px, transparent 22px), linear-gradient(var(--cloud), var(--cloud)) top / 100% 46% no-repeat;"></span>'
+      + mini('--g-research', 10, w * 0.72, 22, '', 'is-passed')
+      + '<svg style="position:absolute;left:0;top:0" width="' + w + '" height="112" aria-hidden="true"><path d="M' + (w * 0.36) + ' 66 Q ' + (w * 0.52) + ' 64 ' + (w * 0.62) + ' 42" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="4 5" stroke-linecap="round"/><path d="M' + (w * 0.62 - 7) + ' 46 L ' + (w * 0.62) + ' 42 L ' + (w * 0.62 + 1) + ' 50" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      + mini('--g-class', 16, w * 0.26, 70, '');
+  }
+  let s = '';
+  for (let k = 0; k < 10; k++) {
+    const a = (k / 10) * Math.PI * 2 + 0.3, dist = 30 + (k % 3) * 8;
+    s += '<span class="shard" style="--g: var(' + (k % 2 ? '--g-life' : '--g-career') + ');transform:translate(' + (w / 2 - 5 + Math.cos(a) * dist).toFixed(1) + 'px,' + (56 + Math.sin(a) * dist * 0.8).toFixed(1) + 'px) rotate(' + (k * 37) + 'deg)"></span>';
+  }
+  return s + '<p class="pan" style="transform:translate(' + (w / 2 - 42) + 'px,40px)">ぱん！</p>';
+}
+function renderOnb() {
+  const s = ONB[onbStep];
+  $('onb-title').textContent = s.t;
+  $('onb-body').textContent = s.b;
+  $('onb-step').textContent = (onbStep + 1) + ' / 3';
+  Array.prototype.forEach.call($('onb-dots').children, (d, i) => d.classList.toggle('on', i === onbStep));
+  $('onb-next').textContent = onbStep === 2 ? 'はじめる' : '次へ';
+  $('onb-art').innerHTML = artFor(onbStep, $('onb-art').clientWidth || 300);
+}
+function openOnb() {
+  onbStep = 0;
+  openSheet('sheet-onb', { lock: true, light: true, focus: 'onb-title' });
+  renderOnb();
+}
+
+/* ===== 描き直し ===== */
+function weekCount(n) {
+  const d = new Date(n);
+  const back = (d.getDay() + 6) % 7;   // 月曜はじまり
+  d.setHours(0, 0, 0, 0);
+  const start = d.getTime() - back * DAY;
+  return state.done.filter((x) => !x.example && x.doneAt >= start).length;
+}
+
+/* ===== 記録 ===== */
+/* 日数を「3時間」「1.4日」の形に */
+function fmtSpan(days) {
+  if (days < 1 / 24) return '1時間未満';
+  if (days < 1) return Math.round(days * 24) + '時間';
+  return (Math.round(days * 10) / 10) + '日';
+}
+function dayLabel(ts, n) {
+  const a = new Date(ts), b = new Date(n);
+  const key = (d) => d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+  if (key(a) === key(b)) return '今日';
+  const y = new Date(n - DAY);
+  if (key(a) === key(y)) return '昨日';
+  return (a.getMonth() + 1) + '/' + a.getDate();
+}
+/* 最近50回ぶん：渡す・割るまでの平均日数、3日以内に返せた割合、ジャンル別の平均（長い順） */
+function returnStats() {
+  const list = state.log.slice(0, 50);
+  if (!list.length) return null;
+  const avgDays = (xs) => xs.reduce((a, e) => a + e.heldMs, 0) / xs.length / DAY;
+  const byGenre = Object.keys(GENRES).map((k) => {
+    const xs = list.filter((e) => e.genre === k);
+    return xs.length ? { key: k, n: xs.length, avg: avgDays(xs) } : null;
+  }).filter(Boolean).sort((a, b) => b.avg - a.avg);
+  return {
+    n: list.length,
+    avg: avgDays(list),
+    rate: list.filter((e) => e.heldMs < FULL_DAYS * DAY).length / list.length,
+    byGenre: byGenre
+  };
+}
+/* ジャンル別の横棒（2ジャンル以上のときだけ。棒は1色、ジャンルは横の点で見分ける） */
+function genreChart(s) {
+  if (!s || s.byGenre.length < 2) return '';
+  const scale = Math.max(FULL_DAYS, s.byGenre[0].avg) * 1.08;
+  const pct = (d) => Math.min(100, (d / scale) * 100).toFixed(1) + '%';
+  return '<p class="lbl">ジャンル別（平均の長い順）</p><ul class="genre-chart">'
+    + s.byGenre.map((x) => {
+      const g = GENRES[x.key], v = fmtSpan(x.avg);
+      return '<li class="gc-row" style="--g: var(' + g.v + ')" title="' + g.label + '：平均 ' + v + '（' + x.n + '回）">'
+        + '<span class="gc-name"><span class="dot" aria-hidden="true"></span>' + g.label + '</span>'
+        + '<span class="gc-track" aria-hidden="true"><span class="gc-bar" style="width: ' + pct(x.avg) + '"></span><span class="gc-line" style="left: ' + pct(FULL_DAYS) + '"></span></span>'
+        + '<span class="gc-val"><b>' + v + '</b> ・ ' + x.n + '回</span></li>';
+    }).join('')
+    + '</ul><p class="small gc-note">線は3日（ここを越えるとパンパン）</p>';
+}
+function renderLog() {
+  const n = now(), s = returnStats();
+  const head = '<div class="grabber" aria-hidden="true"></div><div class="sheet-head"><h2 id="log-title" tabindex="-1">記録</h2><button class="icon-btn" type="button" data-close aria-label="閉じる">×</button></div>';
+  const stats = s
+    ? '<div class="stats"><div class="stat"><span class="stat-k">ボールを返すまで</span><b class="stat-v">平均 ' + fmtSpan(s.avg) + '</b></div>'
+      + '<div class="stat"><span class="stat-k">3日以内に返せた</span><b class="stat-v">' + Math.round(s.rate * 100) + '%</b></div></div>'
+      + '<p class="small">最近 ' + s.n + ' 回ぶん。持ち始めてから「渡した」か「割った」までの日数</p>'
+    : '<p class="small">まだ記録がないよ。風船を渡すか割ると、ここにたまる</p>';
+  const done = state.done.filter((d) => !d.example);
+  let list;
+  if (!done.length) list = '<p class="small">まだ割った風船はないよ</p>';
+  else {
+    let last = '';
+    list = '<ul class="log-list">' + done.map((d) => {
+      const day = dayLabel(d.doneAt, n), g = GENRES[d.genre];
+      const sub = d.fromPassed ? '相手待ちから割った' : (typeof d.heldMs === 'number' ? fmtSpan(d.heldMs / DAY) + 'で割った' : '');
+      const hdr = day !== last ? '<li class="log-day">' + day + '</li>' : '';
+      last = day;
+      return hdr + '<li class="log-item" style="--g: var(' + g.v + ')"><span class="dot" aria-hidden="true"></span><span class="log-text">' + esc(g.label + '：' + d.text) + '</span><span class="log-sub">' + sub + '</span></li>';
+    }).join('') + '</ul>';
+  }
+  $('sheet-log').innerHTML = head + '<p class="lbl">ボールを返す速さ</p>' + stats + genreChart(s) + '<p class="lbl">割った風船（新しい順・50件まで）</p>' + list;
+}
+function render() {
+  const n = now();
+  const mine = state.tasks.filter((t) => t.status === 'mine').length;
+  const passed = state.tasks.length - mine;
+  $('n-mine').textContent = mine;
+  $('n-passed').textContent = passed;
+  $('n-week').textContent = weekCount(n);
+  exVisible = state.tasks.some((t) => t.example);
+  $('ex-note').hidden = !exVisible;
+  $('empty').hidden = mine > 0;
+  hintVisible = !state.settings.hintDone && mine > 0;
+  $('hint').hidden = !hintVisible;
+  syncBalloons(n);
+  layoutHomes();
+  if (motionOK()) startLoop(); else placeStatic();
+  if (isOpen('sheet-settings')) renderSettings();
+  if (isOpen('sheet-log')) renderLog();
+}
+function refreshOpenSheet() {
+  if (isOpen('sheet-detail') && detail.mode === 'view') renderDetail();
+  else if (isOpen('sheet-detail') && !getTask(detail.id)) closeSheet();
+  if (isOpen('sheet-settings')) renderSettings();
+}
+function tick() {
+  if (document.hidden) return;
+  render();
+}
+
+/* ===== はじまり ===== */
+function init() {
+  state = loadLocal() || defaultState();
+  measure();
+  render();
+
+  window.addEventListener('pointermove', onMove, { passive: false });
+  window.addEventListener('pointerup', onUp);
+  window.addEventListener('pointercancel', onCancel);
+  stage.addEventListener('scroll', () => { stage.scrollTop = 0; stage.scrollLeft = 0; });
+
+  let rz = 0;
+  const onResize = () => {
+    if (rz) return;
+    rz = requestAnimationFrame(() => { rz = 0; measure(); render(); if (isOpen('sheet-onb')) renderOnb(); });
+  };
+  window.addEventListener('resize', onResize);
+  if (window.ResizeObserver) new ResizeObserver(onResize).observe(stage);
+  const vv = window.visualViewport;
+  if (vv) {
+    const kb = () => document.documentElement.style.setProperty('--kb', Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) + 'px');
+    vv.addEventListener('resize', kb);
+    vv.addEventListener('scroll', kb);
+  }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) stopLoop(); else render(); });
+  if (reducedMQ.addEventListener) reducedMQ.addEventListener('change', () => { stopLoop(); render(); });
+  setInterval(tick, 5000);
+
+  $('btn-add').addEventListener('click', () => openAdd(true));
+  $('btn-stuck').addEventListener('click', () => openDiag(null));
+  $('btn-help').addEventListener('click', () => openSheet('sheet-help'));
+  $('btn-settings').addEventListener('click', () => { renderSettings(); openSheet('sheet-settings'); });
+  $('counts').addEventListener('click', () => { renderLog(); openSheet('sheet-log', { focus: 'log-title' }); });
+  $('ex-clear').addEventListener('click', clearExamples);
+  $('toast-action').addEventListener('click', () => { const fn = toastFn; hideToast(); if (fn) fn(); });
+  $('scrim').addEventListener('click', () => { if (sheetEl && !sheetEl.dataset.lock) closeSheet(); });
+  document.addEventListener('click', (e) => { if (e.target.closest('[data-close]')) closeSheet(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && sheetEl && !sheetEl.dataset.lock) closeSheet(); });
+
+  $('add-form').addEventListener('submit', (e) => { e.preventDefault(); submitAdd(); });
+  guardEnter($('add-text'), submitAdd);
+  $('add-text').addEventListener('input', () => { updateCount('add-text', 'add-count'); if ($('add-text').value.trim()) $('add-err').hidden = true; });
+  $('add-home').addEventListener('click', () => closeSheet());
+
+  $('set-openadd').addEventListener('change', (e) => { state.settings.openAddOnLaunch = e.target.checked; commit(); });
+  $('set-sound').addEventListener('change', (e) => { state.settings.sound = e.target.checked; commit(); if (e.target.checked) playPop(1); });
+  $('time-1').addEventListener('click', () => shiftTime(DAY));
+  $('time-3').addEventListener('click', () => shiftTime(3 * DAY));
+  $('time-reset').addEventListener('click', () => shiftTime(null));
+  $('set-ex-clear').addEventListener('click', () => { clearExamples(); renderSettings(); });
+  $('set-wipe').addEventListener('click', (e) => armTwice(e.currentTarget, 'もう一度押すと、すべて消えます', () => {
+    state.tasks = [];
+    state.done = [];
+    state.settings.timeOffsetMs = 0;
+    commit();
+    renderSettings();
+    toast('すべて消したよ');
+  }));
+
+  $('onb-next').addEventListener('click', () => {
+    if (onbStep < 2) { onbStep++; renderOnb(); $('onb-title').focus({ preventScroll: true }); return; }
+    state.settings.onboarded = true;
+    commit();
+    closeSheet();
+    if (state.settings.openAddOnLaunch) openAdd(false);
+  });
+
+  if (!state.settings.onboarded) openOnb();
+  else if (state.settings.openAddOnLaunch) openAdd(false);
+
+  initCloud();
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+else init();
+})();
+</script>
+</body>
+</html>
