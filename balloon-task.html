@@ -131,7 +131,7 @@ button { touch-action: manipulation; cursor: pointer; }
 /* ---- 枠 ---- */
 .app { height: 100%; display: flex; flex-direction: column; padding-bottom: var(--bar-h); }
 .top {
-  display: grid; grid-template-columns: 1fr auto auto; align-items: center;
+  display: grid; grid-template-columns: 1fr auto auto auto; align-items: center;
   column-gap: 8px; row-gap: 2px; padding: 10px 16px 8px;
 }
 .top h1 { margin: 0; font: 700 21px/1.3 var(--font-round); letter-spacing: .03em; }
@@ -176,6 +176,13 @@ button.counts:focus-visible { outline: 3px solid var(--focus); outline-offset: 2
   font: 700 18px/1 var(--font-round); display: grid; place-items: center;
 }
 .icon-btn:active { background: var(--chip); }
+/* 整える：指で置いた場所を忘れて、元の並び（小さい風船は格子、大きい風船は真ん中）に戻す */
+.tidy-btn {
+  height: 36px; padding: 0 14px; border-radius: 999px;
+  border: 1.5px solid var(--line); background: var(--hint-bg); color: var(--fg);
+  font: 700 13.5px/1 var(--font-round); white-space: nowrap;
+}
+.tidy-btn:active { background: var(--chip); }
 
 /* ---- 空と雲 ---- */
 .stage { position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: none; }
@@ -521,6 +528,7 @@ button.counts:focus-visible { outline: 3px solid var(--focus); outline-offset: 2
 <div class="app" id="app">
   <header class="top">
     <h1>ふうせんタスク</h1>
+    <button class="tidy-btn" id="btn-tidy" type="button">整える</button>
     <button class="icon-btn" id="btn-help" type="button" aria-label="考え方">？</button>
     <button class="icon-btn" id="btn-settings" type="button" aria-label="設定">⋯</button>
     <button class="counts" id="counts" type="button">持ってる <b id="n-mine">0</b><span class="sep">・</span>相手待ち <b id="n-passed">0</b><span class="sep">・</span>今週割った <b id="n-week">0</b><span class="counts-go">記録</span></button>
@@ -1077,12 +1085,17 @@ const stringLen = (r) => clamp(r * 0.5, 14, 28);
 const below = (r) => r * 1.44 + stringLen(r) + 22;   // 風船の中心から日数バッジの下まで（本体は幅の1.27倍の高さ・結び目つき）
 const dayText = (d) => (d < 1 ? '今日' : Math.floor(d) + '日');
 
-/* 中心が動ける範囲（status ごと） */
-function regionOf(status, r) {
+/* 「大きい風船」＝持って5日（やばい）から。ほかの風船と押し合わず、重なってよい（古いほど手前） */
+const BIG_DAYS = DANGER_DAYS;
+const isBig = (t, n) => t.status === 'mine' && heldDays(t, n) >= BIG_DAYS;
+
+/* 中心が動ける範囲（status ごと）。大きい風船は体がはみ出してよいが、文字のある真ん中は必ず画面に残す */
+function regionOf(status, r, big) {
   if (status === 'passed') {
     const y0 = 30 + r * 1.1;
     return { x0: 16 + r, x1: W - 16 - r, y0: y0, y1: Math.max(y0, BAND - below(r) + 14) };
   }
+  if (big) return { x0: W * 0.15, x1: W * 0.85, y0: BAND * 0.6, y1: Math.max(BAND * 0.6, H - 70) };
   let x0 = 16 + r, x1 = W - 16 - r;
   if (x0 > x1) x0 = x1 = W / 2;                    // 横に入りきらない風船は真ん中に
   let y0 = BAND + 14 + r * 1.1 + (exVisible ? 30 : 0);
@@ -1150,6 +1163,7 @@ function decorate(b, t, n) {
   if (b.status !== t.status) { b.status = t.status; b.free = true; }
   const d = passed ? passedDays(t, n) : heldDays(t, n);
   const full = !passed && d >= FULL_DAYS, danger = !passed && d >= DANGER_DAYS, nudge = passed && waitDays(t, n) >= 3;
+  b.big = !passed && d >= BIG_DAYS;
   el.classList.toggle('is-wait', nudge);
   el.style.setProperty('--g', 'var(' + g.v + ')');
   el.style.setProperty('--gb', 'var(' + g.v.replace('--g-', '--gb-') + ')');   // 風船の本体は淡い色
@@ -1203,18 +1217,26 @@ function syncBalloons(n) {
 }
 
 function layoutHomes() {
+  const n = now();
   const mine = state.tasks.filter((t) => t.status === 'mine').sort((a, b) => a.heldSince - b.heldSince);
   const passed = state.tasks.filter((t) => t.status === 'passed').sort((a, b) => (a.passedAt || 0) - (b.passedAt || 0));
-  placeGroup(mine, slotRegion('mine'));
+  placeGroup(mine.filter((t) => !isBig(t, n)), slotRegion('mine'));   // 小さい風船は格子に散らす
+  placeGroup(mine.filter((t) => isBig(t, n)), slotRegion('mine'), true);   // 大きい風船は真ん中に重ねる
   placeGroup(passed, slotRegion('passed'));
 }
-function placeGroup(list, reg) {
-  const s = slotsFor(list, reg);
+/* 定位置を決める。指で置いた風船（t.pos あり）はその場所に留まり、押されない（anchored） */
+function placeGroup(list, reg, big) {
+  const s = big ? null : slotsFor(list, reg);
+  const cx = W / 2, cy = (BAND + H) / 2;
   list.forEach((t, i) => {
     const b = bodies.get(t.id);
     if (!b || b.popping) return;
+    b.anchored = !!t.pos;
     if (t.pos) { b.hx = reg.x0 + t.pos.x * (reg.x1 - reg.x0); b.hy = reg.y0 + t.pos.y * (reg.y1 - reg.y0); }
-    else { b.hx = s[i].x; b.hy = s[i].y; }
+    else if (big) {   // 古い順に、真ん中から少しずつずらして重ねる（いちばん古いものが真ん中・手前）
+      const rad = i === 0 ? 0 : Math.min(W, H) * 0.07 * Math.sqrt(i), ang = i * 2.4;
+      b.hx = cx + Math.cos(ang) * rad; b.hy = cy + Math.sin(ang) * rad;
+    } else { b.hx = s[i].x; b.hy = s[i].y; }
     if (!b.placed) {
       b.placed = true;
       b.x = b.hx;
@@ -1265,21 +1287,25 @@ function step(ts) {
     b.ax = (tx - b.x) * 7 - b.vx * 3.2;
     b.ay = (ty - b.y) * 7 - b.vy * 3.2;
   }
+  /* 押し合いは小さい風船どうしだけ。弱めにして少しずつ離れる。指で置いた風船は押されず、置いていないほうがよける */
   for (let i = 0; i < list.length; i++) {
     for (let j = i + 1; j < list.length; j++) {
       const a = list[i], c = list[j];
+      if (a.big || c.big || (a.anchored && c.anchored)) continue;
       const dx = c.x - a.x, dy = c.y - a.y, min = a.r + c.r + 6, d2 = dx * dx + dy * dy;
       if (d2 >= min * min) continue;
-      const d = Math.sqrt(d2) || 0.01, push = (min - d) * 60, nx = dx / d, ny = dy / d;
-      if (!a.drag) { a.ax -= nx * push; a.ay -= ny * push; }
-      if (!c.drag) { c.ax += nx * push; c.ay += ny * push; }
+      // 指で置いた風船があるときは、相手が定位置に戻ろうとする力に勝って、よけきれる強さにする
+      const d = Math.sqrt(d2) || 0.01, push = (min - d) * (a.anchored || c.anchored ? 90 : 60), nx = dx / d, ny = dy / d;
+      if (!a.drag && !a.anchored) { a.ax -= nx * push; a.ay -= ny * push; }
+      if (!c.drag && !c.anchored) { c.ax += nx * push; c.ay += ny * push; }
     }
   }
   for (const b of list) {
     if (b.drag) continue;
-    const reg = regionOf(b.status, b.r);
-    if (b.free) {
-      if (b.x >= reg.x0 - 2 && b.x <= reg.x1 + 2 && b.y >= reg.y0 - 2 && b.y <= reg.y1 + 2) b.free = false;
+    const reg = regionOf(b.status, b.r, b.big);
+    if (b.free) {   // 場所へ向かう途中。着いたら（遅くとも2.5秒で）ふだんの扱いに戻す
+      if (!b.freeAt) b.freeAt = ts;
+      if ((b.x >= reg.x0 - 2 && b.x <= reg.x1 + 2 && b.y >= reg.y0 - 2 && b.y <= reg.y1 + 2) || ts - b.freeAt > 2500) { b.free = false; b.freeAt = 0; }
     } else {
       if (b.x < reg.x0) b.ax += (reg.x0 - b.x) * 50; else if (b.x > reg.x1) b.ax += (reg.x1 - b.x) * 50;
       if (b.y < reg.y0) b.ay += (reg.y0 - b.y) * 50; else if (b.y > reg.y1) b.ay += (reg.y1 - b.y) * 50;
@@ -1339,7 +1365,7 @@ function onMove(e) {
   apply(b);
   press.samples.push({ x: p.x, y: p.y, t: t });
   while (press.samples.length > 2 && t - press.samples[0].t > 120) press.samples.shift();
-  dragFeedback(b);
+  dragFeedback(b, p.y);
 }
 
 function onUp(e) {
@@ -1354,7 +1380,7 @@ function onUp(e) {
     b.drag = false;
     b.el.classList.remove('is-dragging');
     endDragFeedback();
-    handleDrop(b, releaseVy(pr.samples));
+    handleDrop(b, releaseVy(pr.samples), p.y);
     return;
   }
   if (pr.second) { popTask(pr.id); return; }
@@ -1389,11 +1415,13 @@ function toPos(status, x, y) {
   return normPos({ x: (x - reg.x0) / Math.max(1, reg.x1 - reg.x0), y: (y - reg.y0) / Math.max(1, reg.y1 - reg.y0) });
 }
 
-function handleDrop(b, vy) {
+/* 渡す・戻すは「指を離した場所」で決める（大きい風船は中心が雲から遠いので） */
+function handleDrop(b, vy, py) {
   const t = getTask(b.id);
   if (!t) return;
+  if (py == null) py = b.y;
   if (t.status === 'mine') {
-    const inBand = b.y < BAND + b.r * 0.2;
+    const inBand = py < BAND + 6;
     if (inBand || vy <= -0.8) {
       if (!inBand) { b.vy = Math.max(-1600, vy * 1000); b.vx = 0; }
       passTask(t.id, inBand ? toPos('passed', b.x, b.y) : null);
@@ -1404,21 +1432,22 @@ function handleDrop(b, vy) {
     commit();
     return;
   }
-  if (b.y > BAND + 10) { returnTask(t.id, toPos('mine', b.x, b.y)); return; }
+  if (py > BAND + 10) { returnTask(t.id, toPos('mine', b.x, b.y)); return; }
   t.pos = toPos('passed', b.x, b.y);
   b.free = true;
   commit();
 }
 
-function dragFeedback(b) {
+function dragFeedback(b, py) {
   const t = getTask(b.id);
   if (!t) return;
+  if (py == null) py = b.y;
   if (t.status === 'mine') {
-    const over = b.y < BAND + b.r * 0.2;
+    const over = py < BAND + 6;
     bandEl.classList.toggle('is-over', over);
     $('band-label').textContent = over ? 'ここで離すと渡す' : '上の雲へ動かすと渡す';
   } else {
-    $('drop-tip').hidden = !(b.y > BAND + 10);
+    $('drop-tip').hidden = !(py > BAND + 10);
   }
 }
 function endDragFeedback() {
@@ -2036,6 +2065,13 @@ function init() {
   $('btn-help').addEventListener('click', () => openSheet('sheet-help'));
   $('btn-settings').addEventListener('click', () => { renderSettings(); openSheet('sheet-settings'); });
   $('counts').addEventListener('click', () => { renderLog(); openSheet('sheet-log', { focus: 'log-title' }); });
+  $('btn-tidy').addEventListener('click', () => {
+    const prev = state.tasks.filter((t) => t.pos).map((t) => ({ id: t.id, pos: t.pos }));
+    if (!prev.length) { toast('もう整っているよ'); return; }
+    state.tasks.forEach((t) => { delete t.pos; });
+    commit();
+    toast('風船を整えたよ', { onAction: () => { prev.forEach((p) => { const t = getTask(p.id); if (t) t.pos = p.pos; }); commit(); } });
+  });
   $('ex-clear').addEventListener('click', clearExamples);
   $('toast-action').addEventListener('click', () => { const fn = toastFn; hideToast(); if (fn) fn(); });
   $('scrim').addEventListener('click', () => { if (sheetEl && !sheetEl.dataset.lock) closeSheet(); });
