@@ -1,0 +1,16 @@
+{
+  "name": "ふうせんタスク",
+  "short_name": "ふうせんタスク",
+  "description": "持っている日数でふくらむ風船で、自分のボールを抱えないためのタスクアプリ",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#dcebfb",
+  "theme_color": "#82c6fa",
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
