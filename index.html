@@ -211,19 +211,16 @@ button.counts:focus-visible { outline: 3px solid var(--focus); outline-offset: 2
 .confirm-sub { margin: 8px 0 0; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
 .confirm-item { display: block; margin-bottom: 4px; font-size: 15px; color: var(--fg); }
 .confirm-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+/* 丸いボタン（？ ⋯ ×）と「整える」も押し込める立体（見た目は「下のバーとボタン」の決まりで。小さいので厚みは 3px） */
 .icon-btn {
   width: 40px; height: 40px; border-radius: 50%; padding: 0;
-  border: 1.5px solid var(--line); background: transparent; color: var(--fg);
   font: 700 18px/1 var(--font-round); display: grid; place-items: center;
 }
-.icon-btn:active { background: var(--chip); }
 /* 整える：指で置いた場所を忘れて、元の並び（小さい風船は格子、大きい風船は真ん中）に戻す */
 .tidy-btn {
   height: 36px; padding: 0 14px; border-radius: 999px;
-  border: 1.5px solid var(--line); background: var(--hint-bg); color: var(--fg);
   font: 700 13.5px/1 var(--font-round); white-space: nowrap;
 }
-.tidy-btn:active { background: var(--chip); }
 
 /* ---- 空と雲 ---- */
 .stage { position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: none; }
@@ -373,24 +370,30 @@ button.counts:focus-visible { outline: 3px solid var(--focus); outline-offset: 2
   background: var(--bar-bg); border-top: 1px solid var(--line);
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
 }
-/* 押すと沈む立体ボタン：下に同じ形の「厚み」（濃い色）とやわらかい影。乗せると少し浮き、押すと沈み、離すとばねで戻る */
-.btn {
-  --edge: var(--btn-edge);
-  min-height: 48px; padding: 10px 16px; border-radius: 14px;
+/* 押すと沈む立体ボタン：下に同じ形の「厚み」（濃い色）とやわらかい影。乗せると少し浮き、押すと沈み、離すとばねで戻る。
+   文字のボタン（.btn）・つまずきの選択肢（.opt）・上の「整える」と丸いボタン（？ ⋯ ×）を同じ動きにそろえる。
+   厚みは --lift（ふつう 4px、小さいボタンは 3px）。文字のリンク・タブ・ジャンルの選択は平らなまま */
+.btn, .opt, .icon-btn, .tidy-btn {
+  --edge: var(--btn-edge); --lift: 4px;
   border: 1.5px solid var(--line); background: var(--btn-face); color: var(--fg);
-  font: 700 16px/1.3 var(--font-round); text-align: center;
-  transform: translateY(-4px);
-  box-shadow: 0 4px 0 var(--edge), 0 6px 10px var(--btn-drop);
+  transform: translateY(calc(var(--lift) * -1));
+  box-shadow: 0 var(--lift) 0 var(--edge), 0 calc(var(--lift) + 2px) 10px var(--btn-drop);
   transition: transform .6s cubic-bezier(.3, .7, .4, 1), box-shadow .6s cubic-bezier(.3, .7, .4, 1), filter .25s;
   -webkit-tap-highlight-color: transparent;
 }
 @media (hover: hover) {
-  .btn:hover {
-    transform: translateY(-6px); box-shadow: 0 6px 0 var(--edge), 0 9px 14px var(--btn-drop); filter: brightness(1.04);
+  .btn:hover, .opt:hover, .icon-btn:hover, .tidy-btn:hover {
+    transform: translateY(calc(var(--lift) * -1.5));
+    box-shadow: 0 calc(var(--lift) * 1.5) 0 var(--edge), 0 calc(var(--lift) * 1.5 + 3px) 14px var(--btn-drop); filter: brightness(1.04);
     transition-duration: .25s; transition-timing-function: cubic-bezier(.3, .7, .4, 1.5);
   }
 }
-.btn:active { transform: translateY(-2px); box-shadow: 0 2px 0 var(--edge), 0 3px 4px var(--btn-drop); transition-duration: .034s; background: var(--chip); }
+.btn:active, .opt:active, .icon-btn:active, .tidy-btn:active {
+  transform: translateY(calc(var(--lift) * -.5)); box-shadow: 0 calc(var(--lift) * .5) 0 var(--edge), 0 3px 4px var(--btn-drop);
+  transition-duration: .034s; background: var(--chip);
+}
+.btn { min-height: 48px; padding: 10px 16px; border-radius: 14px; font: 700 16px/1.3 var(--font-round); text-align: center; }
+.icon-btn, .tidy-btn { --lift: 3px; }
 .btn-primary { --edge: var(--warm-edge); background: var(--warm); border-color: var(--warm); color: var(--on-warm); }
 .btn-primary:active { background: var(--warm-press); border-color: var(--warm-press); }
 .btn-small { min-height: 40px; padding: 6px 16px; font-size: 14.5px; border-radius: 12px; }
@@ -482,14 +485,13 @@ button.counts:focus-visible { outline: 3px solid var(--focus); outline-offset: 2
 .task-chip .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--g); flex: none; }
 .task-chip span:last-child { min-width: 0; overflow-wrap: anywhere; }
 .opts { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 10px; }
+/* 5つの選択肢も、ほかのボタンと同じ押し込める立体（.btn と同じ決まり） */
 .opt {
   width: 100%; display: grid; grid-template-columns: 30px 1fr; align-items: center; gap: 12px;
-  min-height: 66px; padding: 14px 16px; text-align: left;
-  border-radius: 16px; border: 1.5px solid var(--line); background: var(--surface-2);
-  font: 700 16px/1.45 var(--font-round); color: var(--fg);
+  min-height: 66px; padding: 14px 16px; text-align: left; border-radius: 16px;
+  font: 700 16px/1.45 var(--font-round);
 }
-.opt:active { background: var(--chip); }
-.opt-n { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); border: 1.5px solid var(--line); font: 700 14px/1 var(--font-round); color: var(--muted); font-variant-numeric: tabular-nums; }
+.opt-n { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--chip); border: 1.5px solid var(--line); font: 700 14px/1 var(--font-round); color: var(--muted); font-variant-numeric: tabular-nums; }
 .ans-place { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); padding-top: 8px; }
 .ans-place b { padding: 3px 10px; border-radius: 999px; background: var(--chip); color: var(--fg); font: 700 13px/1.4 var(--font-round); }
 .ans-title { margin-top: 10px !important; }
