@@ -27,13 +27,14 @@
 ## ファイル
 - `index.html` … 公開用のページ（`python tools/build_pages.py` で `balloon-task.html` から作ります）
 - `balloon-task.html` … アプリ本体
-- `assets/` … 背景（昼・夜）と、風船の型
+- `assets/` … 背景（昼・夜）、風船の型、アイコン（`assets/icons/`）
+- `manifest.webmanifest` … ホーム画面に追加したときの名前とアイコン
 - `docs/つまずき診断の中身.md` … 「つまずいた」の答えの文面と、根拠にした研究
 - `tools/` … ページを作り直す小さな道具
 
 ## 使っているもの
 - 文字: [Zen Maru Gothic](https://fonts.google.com/specimen/Zen+Maru+Gothic)（Google Fonts、SIL Open Font License）
-- 背景と風船の絵: ChatGPT で生成した画像をもとに加工
+- 背景・風船・アイコンの絵: ChatGPT で生成した画像をもとに加工（アイコンは `python tools/make_icons.py <元の絵>` で大きさ違いを作ります）
 - 割れる音: Web Audio でその場で合成（音のファイルは使っていません）
 
 ## 権利について
